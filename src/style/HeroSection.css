@@ -1,0 +1,39 @@
+/* Root setup */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Body styling */
+body {
+  position: relative;
+  background: #000;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* Swiper container */
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+/* Swiper slide */
+.swiper-slide {
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Slide images */
+.swiper-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
