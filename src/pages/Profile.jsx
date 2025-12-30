@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
 import { updateUsername, deleteAccount } from "../service/auth";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Chart as ChartJS,
   ArcElement,
