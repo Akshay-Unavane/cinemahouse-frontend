@@ -377,7 +377,7 @@ const Profile = () => {
                 Update Username
               </button>
             </div>
-          }
+          )}
         </div>
 
         {/* Delete Account Modal */}
