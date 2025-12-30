@@ -132,7 +132,7 @@ const Profile = () => {
     if (!username.trim()) return showToast("Username cannot be empty", "error");
     setUpdatingUsername(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/update-username`, {
+      const res = await fetch(`${API_URL}/auth/update-username`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}`, },
         body: JSON.stringify({ email: user.email, newUsername: username }),
