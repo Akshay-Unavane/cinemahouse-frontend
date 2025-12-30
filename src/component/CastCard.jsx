@@ -1,18 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/w200";
+const FALLBACK_IMG = `${import.meta.env.BASE_URL}no-image.png`;
 
 const CastCard = ({ actor }) => {
   const navigate = useNavigate();
 
-  if (!actor) return null;
+  if (!actor?.id) return null;
 
-  const handleNavigate = () => {
-    if (actor.id) {
-      navigate(`/person/${actor.id}`);
-    }
-  };
+  const handleNavigate = useCallback(() => {
+    navigate(`/person/${actor.id}`);
+  }, [navigate, actor.id]);
 
   return (
     <button
@@ -27,6 +26,7 @@ const CastCard = ({ actor }) => {
         hover:scale-105
         focus:outline-none
         focus:ring-2
+        focus:ring-red-600
         rounded-xl
       "
     >
@@ -34,12 +34,14 @@ const CastCard = ({ actor }) => {
         src={
           actor.profile_path
             ? `${IMG_BASE}${actor.profile_path}`
-            : "/no-image.png"
+            : FALLBACK_IMG
         }
         alt={actor.name || "Actor"}
         loading="lazy"
         onError={(e) => {
-          e.currentTarget.src = "/no-image.png";
+          if (!e.currentTarget.src.includes("no-image.png")) {
+            e.currentTarget.src = FALLBACK_IMG;
+          }
         }}
         className="
           w-full
@@ -64,5 +66,4 @@ const CastCard = ({ actor }) => {
   );
 };
 
-/* Prevent unnecessary re-renders in cast slider */
 export default memo(CastCard);
