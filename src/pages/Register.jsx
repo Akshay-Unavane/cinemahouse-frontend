@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Clapperboard } from "lucide-react";
-import { motion } from "framer-motion";
-import { useToast } from "../context/ToastContext";
+import { motion as Motion } from "framer-motion";
+import { useToast } from "../context/useToast";
 import { register as registerApi } from "../service/auth";
 
 const Register = () => {
@@ -75,7 +75,7 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[#020024] via-[#1f2933] to-[#0f172a]">
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -167,7 +167,7 @@ const Register = () => {
           </div>
 
           {/* SUBMIT */}
-          <motion.button
+          <Motion.button
             whileTap={{ scale: 0.97 }}
             type="submit"
             disabled={loading || !isPasswordValid}
@@ -181,7 +181,7 @@ const Register = () => {
             "
           >
             {loading ? "Creating Account..." : "Register"}
-          </motion.button>
+          </Motion.button>
 
           {/* FOOTER */}
           <p className="text-center text-gray-300 text-sm">
@@ -194,7 +194,7 @@ const Register = () => {
             </Link>
           </p>
         </form>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };

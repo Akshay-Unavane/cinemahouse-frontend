@@ -1,7 +1,7 @@
 import { ChevronLeft, ExternalLink, MoreVertical, Bookmark, Share2, Link as LinkIcon } from "lucide-react";
 import { useState as useReactState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { addToWatchlist } from "../service/watchlist";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -94,7 +94,7 @@ const TvShowDetails = () => {
   );
 
   // --- 3-dot menu actions ---
-  const handleNavigateToPosterBackdrop = () => {
+  const _handleNavigateToPosterBackdrop = () => {
     navigate(`/poster-backdrop/${id}`);
   };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { getWatchlist, removeFromWatchlist } from "../service/watchlist";
 import MovieCard from "../component/MovieCard";
 import { Trash2, ChevronLeft } from "lucide-react";

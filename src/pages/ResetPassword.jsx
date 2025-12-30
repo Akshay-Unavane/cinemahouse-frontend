@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../context/useToast";
 import { Link } from "react-router-dom";
 
 const ResetPassword = () => {

@@ -1,8 +1,7 @@
 import { getToken } from "./auth";
 
-const API_URL =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:5000/api";
+const ROOT = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const API_URL = `${ROOT}/api`;
 
 /* ===========================
    SAFE RESPONSE PARSER

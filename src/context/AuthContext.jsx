@@ -1,9 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
+/* @refresh reset */
+import { useEffect, useState } from "react";
 import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
+import { AuthContext } from "./contexts";
 
 import jwtDecode from "jwt-decode";
-
-const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -67,11 +67,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-/* Custom hook */
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return context;
-};
+/* Note: `useAuth` moved to a separate module to avoid fast-refresh export issues. */

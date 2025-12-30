@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { motion as Motion } from "framer-motion";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { login as loginApi } from "../service/auth";
 import Loader from "../component/Loader";
 
@@ -53,7 +53,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-4">
       {loading && <Loader message="Logging in..." />}
 
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
@@ -67,13 +67,13 @@ const Login = () => {
         </p>
 
         {error && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2 text-rose-400 text-sm"
           >
             {error}
-          </motion.div>
+          </Motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -141,7 +141,7 @@ const Login = () => {
             </Link>
           </p>
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };

@@ -1,8 +1,8 @@
+/* @refresh reset */
 // Toast context for global notifications
 import { X } from "lucide-react";
-import { createContext, useContext, useState } from "react";
-
-const ToastContext = createContext();
+import { useState } from "react";
+import { ToastContext } from "./contexts";
 
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null);
@@ -25,7 +25,4 @@ export function ToastProvider({ children }) {
   );
 }
 
-export function useToast() {
-  return useContext(ToastContext);
-  
-}
+/* Note: `useToast` moved to a separate module to avoid fast-refresh export issues. */

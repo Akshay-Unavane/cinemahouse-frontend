@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
-import {motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import HeroSection from "../component/HeroSection";
 import MovieCard from "../component/MovieCard";
 import Loader from "../component/Loader";
@@ -150,7 +150,7 @@ const Home = () => {
         {/* CONTENT */}
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div
+            <Motion.div
               key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -158,18 +158,18 @@ const Home = () => {
               className="flex justify-center py-28"
             >
               <Loader />
-            </motion.div>
+            </Motion.div>
           ) : movies.length === 0 ? (
-            <motion.p
+            <Motion.p
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center text-gray-400 py-24"
             >
               No content found.
-            </motion.p>
+            </Motion.p>
           ) : (
-            <motion.div
+            <Motion.div
               key={`${category}-${page}`}
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -183,7 +183,7 @@ const Home = () => {
                   featured={category.includes("trending")}
                 />
               ))}
-            </motion.div>
+            </Motion.div>
           )}
         </AnimatePresence>
 

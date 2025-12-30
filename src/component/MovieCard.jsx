@@ -7,9 +7,9 @@ import {
   Share2,
   Link as LinkIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { motion as Motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { addToWatchlist } from "../service/watchlist";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
@@ -97,7 +97,7 @@ function MovieCard({ movie }) {
   };
 
   return (
-    <motion.div
+    <Motion.div
       whileHover={{ scale: 1.06 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
       className="relative cursor-pointer rounded-xl bg-zinc-900 shadow-xl overflow-visible"
@@ -136,7 +136,7 @@ function MovieCard({ movie }) {
       {/* DROPDOWN */}
       <AnimatePresence>
         {menuOpen && (
-          <motion.div
+          <Motion.div
             ref={menuRef}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,10 +163,10 @@ function MovieCard({ movie }) {
             >
               <Share2 size={16} /> Share
             </button>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </Motion.div>
   );
 }
 

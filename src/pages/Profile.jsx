@@ -1,5 +1,5 @@
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
 import { useState, useEffect } from "react";
 import {
   Eye,
@@ -16,8 +16,7 @@ import {
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
 import { updateUsername, deleteAccount } from "../service/auth";
-import { AnimatePresence } from "framer-motion";
-import { motion } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -98,12 +97,12 @@ const Profile = () => {
     if (!user || !token) return;
 
     getWatchlist()
-    .then(data => setWatchlistStats(data))
-    .catch(err => 
-      showToast(err.message || "Failed to fetch watchlist stats", "error")
-    );
+      .then((data) => setWatchlistStats(data))
+      .catch((err) =>
+        showToast(err.message || "Failed to fetch watchlist stats", "error")
+      );
 
-  }, [user, token])
+  }, [user, token, showToast]);
 
   useEffect(() => {
     if (user && token) {
@@ -183,7 +182,7 @@ const Profile = () => {
 
   return (
     <div className="bg-gradient-to-br mt-10 from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-4 py-10 flex justify-center">
-      <motion.div
+      <Motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-6xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl text-white flex flex-col md:flex-row overflow-hidden"
@@ -204,19 +203,22 @@ const Profile = () => {
           </div>
 
           <div className="flex flex-col flex-1 gap-2">
-            {tabs.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === key
-                    ? "bg-[#01B4E4] text-black font-semibold"
-                    : "text-gray-300 hover:bg-white/10"
-                }`}
-              >
-                <Icon size={18} /> {label}
-              </button>
-            ))}
+            {tabs.map(({ key, label, icon }) => {
+              const IconComp = icon;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
+                    activeTab === key
+                      ? "bg-[#01B4E4] text-black font-semibold"
+                      : "text-gray-300 hover:bg-white/10"
+                  }`}
+                >
+                  <IconComp size={18} /> {label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex flex-col gap-2 mt-auto">
@@ -251,28 +253,31 @@ const Profile = () => {
 
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="md:hidden bg-black/30 px-4 py-2 flex flex-col gap-2"
             >
-              {tabs.map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    setActiveTab(key);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full ${
-                    activeTab === key
-                      ? "bg-[#01B4E4] text-black font-semibold"
-                      : "text-gray-300 hover:bg-white/10"
-                  }`}
-                >
-                  <Icon size={16} /> {label}
-                </button>
-              ))}
+              {tabs.map(({ key, label, icon }) => {
+                const IconComp = icon;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setActiveTab(key);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full ${
+                      activeTab === key
+                        ? "bg-[#01B4E4] text-black font-semibold"
+                        : "text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    <IconComp size={16} /> {label}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => setShowDeleteModal(true)}
                 disabled={deleting}
@@ -280,7 +285,7 @@ const Profile = () => {
               >
                 <Trash2 size={16} /> Delete Account
               </button>
-            </motion.div>
+            </Motion.div>
           )}
         </AnimatePresence>
 
@@ -394,13 +399,13 @@ const Profile = () => {
         {/* Delete Account Modal */}
         <AnimatePresence>
           {showDeleteModal && (
-            <motion.div
+            <Motion.div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
-              <motion.div
+              <Motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
@@ -430,11 +435,11 @@ const Profile = () => {
                     {deleting ? "Deleting..." : "Delete"}
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
+              </Motion.div>
+            </Motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Search, Menu, X, User, Clock, Tv, Film, BookmarkCheck, User2, LogOut } from "lucide-react";
 import { BiCameraMovie, BiSolidMoviePlay } from "react-icons/bi";
 
@@ -222,7 +222,7 @@ const Navbar = () => {
       {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
+          <Motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -275,14 +275,14 @@ const Navbar = () => {
                 )}
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
       {/* SEARCH BAR */}
       <AnimatePresence>
         {searchOpen && (
-          <motion.div
+          <Motion.div
             ref={searchRef}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -340,20 +340,20 @@ const Navbar = () => {
                 </div>
               )}
             </form>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
 
      {/* LOGOUT MODAL */}
 <AnimatePresence>
   {showLogoutModal && (
-    <motion.div
+    <Motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm pt-96"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <motion.div
+      <Motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
@@ -384,8 +384,8 @@ const Navbar = () => {
             Logout
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   )}
 </AnimatePresence>
 
