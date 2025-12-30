@@ -38,7 +38,15 @@ export async function getWatchlist() {
     throw new Error(data?.message || "Failed to fetch watchlist");
   }
 
-  return Array.isArray(data) ? data : [];
+  // Normalize possible response shapes:
+  // - [] (array)
+  // - { value: [], Count: 0 } (some wrappers)
+  // - single object for single-item responses
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.value)) return data.value;
+  if (data && typeof data === "object" && data.movieId) return [data];
+
+  return [];
 }
 
 /* ===========================
