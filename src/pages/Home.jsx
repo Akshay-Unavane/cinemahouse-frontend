@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
-import { AnimatePresence } from "framer-motion";
+import {motion, AnimatePresence } from "framer-motion";
 import HeroSection from "../component/HeroSection";
 import MovieCard from "../component/MovieCard";
 import Loader from "../component/Loader";
