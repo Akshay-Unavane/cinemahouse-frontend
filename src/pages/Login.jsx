@@ -88,6 +88,7 @@ const Login = () => {
                 value={form.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-900/80 border border-white/10 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition"
               />
             </div>
@@ -104,6 +105,7 @@ const Login = () => {
                 value={form.password}
                 onChange={handleChange}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="w-full pl-10 pr-12 py-2.5 rounded-lg bg-gray-900/80 border border-white/10 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition"
               />
               <button

@@ -1,6 +1,7 @@
 import { getToken } from "./auth";
 
-const ROOT = (import.meta.env.VITE_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const _RAW_ROOT = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const ROOT = _RAW_ROOT.replace(/\/$/, "").replace(/\/api$/i, "");
 const API_URL = `${ROOT}/api`;
 
 /* ===========================
