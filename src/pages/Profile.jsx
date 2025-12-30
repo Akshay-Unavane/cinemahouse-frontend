@@ -17,7 +17,6 @@ import {
 import { getWatchlist } from "../service/watchlist";
 import { updateUsername, deleteAccount } from "../service/auth";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -40,7 +39,6 @@ const tabs = [
 const Profile = () => {
   const { user, logout, updateUser } = useAuth();
   const { showToast } = useToast();
-  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   const [activeTab, setActiveTab] = useState("profile");
@@ -49,11 +47,11 @@ const Profile = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState(user?.username || "");
-  const [updatingUsername, setUpdatingUsername] = useState(false);
   const [avatar, setAvatar] = useState(user?.avatar || null);
   const [watchlistStats, setWatchlistStats] = useState([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [updatingUsername, setUpdatingUsername] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const sessionHistory = [
@@ -106,6 +104,12 @@ const Profile = () => {
 
   }, [user, token])
 
+  useEffect(() => {
+    if (user && token) {
+      showToast("User authenticated");
+    }
+  }, [user, token, showToast]);
+
   if (!user){ 
     return <div className="text-center py-24 text-white">Please login</div>;
   }
@@ -136,6 +140,7 @@ const Profile = () => {
   };
 
   const handleUpdateUsername = async () => {
+    setUpdatingUsername(true);
     try {
       const newUsername = prompt("Enter new username:");
       if (newUsername) {
@@ -145,10 +150,13 @@ const Profile = () => {
     } catch (err) {
       console.error("UPDATE USERNAME ERROR:", err);
       alert("Failed to update username");
+    } finally {
+      setUpdatingUsername(false);
     }
   };
 
   const handleDeleteAccount = async () => {
+    setDeleting(true);
     try {
       if (window.confirm("Are you sure you want to delete your account?")) {
         const response = await deleteAccount();
@@ -158,6 +166,8 @@ const Profile = () => {
     } catch (err) {
       console.error("DELETE ACCOUNT ERROR:", err);
       alert("Failed to delete account");
+    } finally {
+      setDeleting(false);
     }
   };
 

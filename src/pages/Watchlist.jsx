@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastContext";
 import { getWatchlist, removeFromWatchlist } from "../service/watchlist";
 import MovieCard from "../component/MovieCard";
 import { Trash2, ChevronLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const TMDB_TOKEN = import.meta.env.VITE_API_TOKEN;
@@ -179,9 +179,9 @@ const Watchlist = () => {
       {/* Grid */}
       <AnimatePresence>
         {!loading && watchlist.length > 0 && (
-          <motion.div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {watchlist.map((item) => (
-              <motion.div
+              <div
                 key={`${item.movieId}-${item.mediaType}`}
                 className="relative group"
                 layout
@@ -203,17 +203,17 @@ const Watchlist = () => {
                 >
                   <Trash2 size={16} />
                 </button>
-              </motion.div>
+              </div>
             ))}
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Confirm Modal */}
       <AnimatePresence>
         {confirmOpen && (
-          <motion.div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-            <motion.div className="bg-[#0D253F] p-6 rounded-xl w-full max-w-sm">
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div className="bg-[#0D253F] p-6 rounded-xl w-full max-w-sm">
               <h3 className="text-lg font-semibold mb-2">
                 Remove from Watchlist
               </h3>
@@ -235,8 +235,8 @@ const Watchlist = () => {
                   Remove
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
 import jwt_decode from "jwt-decode";
 
@@ -11,26 +11,20 @@ export const AuthProvider = ({ children }) => {
   /* Load user from token */
   useEffect(() => {
     const token = getToken();
-    if (!token) return setLoading(false);
-
-    try {
-      const decoded = jwt_decode(token);
-      if (decoded.exp * 1000 < Date.now()) {
-        logoutService();
-        setUser(null);
-      } else {
-        setUser({
-          _id: decoded.userId || decoded.sub,
-          username: decoded.username || decoded.name,
-          email: decoded.email,
-        });
-      }
-    } catch {
-      logoutService();
-      setUser(null);
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    // Avoid direct setState calls in effects
+    try {
+      const decoded = jwt_decode(token);
+      setUser(decoded);
+    } catch (err) {
+      console.error("Token decoding failed", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   /* LOGIN */
@@ -56,5 +50,3 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

@@ -7,11 +7,11 @@ const FALLBACK_IMG = `${import.meta.env.BASE_URL}no-image.png`;
 const CastCard = ({ actor }) => {
   const navigate = useNavigate();
 
-  if (!actor?.id) return null;
-
   const handleNavigate = useCallback(() => {
     navigate(`/person/${actor.id}`);
   }, [navigate, actor.id]);
+
+  if (!actor?.id) return null;
 
   return (
     <button
