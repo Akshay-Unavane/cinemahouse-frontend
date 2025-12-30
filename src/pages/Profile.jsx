@@ -94,11 +94,16 @@ const Profile = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!user) return;
+  if (!user) return;
+
+  try {
     getWatchlist()
       .then(data => setWatchlistStats(data))
-      .catch(() => showToast("Failed to load watchlist stats", "error"));
-  }, [user]);
+      .catch(err => showToast(err.message || "Failed to load watchlist stats", "error"));
+  } catch (err) {
+    showToast(err.message || "Failed to load watchlist stats", "error");
+  }
+}, [user]);
 
   if (!user) return <div className="text-center py-24 text-white">Please login</div>;
 
@@ -134,7 +139,7 @@ const Profile = () => {
     try {
       const res = await fetch(`${API_URL}/api/auth/update-username`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}`, },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token", res.token)}`, },
         body: JSON.stringify({ email: user.email, newUsername: username }),
       });
       const data = await res.json();
@@ -163,7 +168,7 @@ const Profile = () => {
       const res = await fetch(`${API_URL}/api/auth/delete-account`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("token", res.token)}`,
         },
       });
 
