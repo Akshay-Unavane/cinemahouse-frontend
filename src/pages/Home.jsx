@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSection from "../component/HeroSection";
@@ -30,13 +30,18 @@ const Home = () => {
   const [movies, setMovies] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const contentRef = useRef(null);
 
-  const fetchData = async () => {
+  const contentRef = useRef(null);
+  const isFirstLoad = useRef(true); // ✅ ADD: prevents first-load race
+
+  // ✅ ADD: stable fetch function
+  const fetchData = useCallback(async () => {
     if (!API_BASE || !API_KEY) {
       console.error("TMDB ENV variables missing");
       return;
     }
+
+    if (page < 1) return; // ✅ ADD safety
 
     try {
       setLoading(true);
@@ -58,17 +63,23 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [category, page]);
 
   /* Reset page when category changes */
   useEffect(() => {
-    setPage(1);
+    if (!isFirstLoad.current) {
+      setPage(1);
+    }
   }, [category]);
 
   /* Fetch data */
   useEffect(() => {
     fetchData();
-  }, [category, page]);
+
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false; // ✅ ADD
+    }
+  }, [fetchData]);
 
   /* EXISTING SCROLL LOGIC (UNCHANGED) */
   useEffect(() => {
@@ -78,12 +89,12 @@ const Home = () => {
     });
   }, [category, page]);
 
-  /* ✅ FIX 1: FORCE TOP ON REFRESH */
+  /* FORCE TOP ON REFRESH */
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  /* ✅ FIX 2: FORCE TOP ON PAGINATION & CATEGORY CHANGE */
+  /* FORCE TOP ON PAGINATION & CATEGORY CHANGE */
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -180,7 +191,7 @@ const Home = () => {
         <div className="flex justify-center items-center gap-6 mt-16">
           <button
             disabled={page === 1 || loading}
-            onClick={() => setPage((p) => p - 1)}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
             className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-40"
           >
             <SkipBack size={16} />
@@ -192,7 +203,7 @@ const Home = () => {
 
           <button
             disabled={loading || page >= 500}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPage((p) => Math.min(500, p + 1))}
             className="px-6 py-2 rounded-full bg-white/10 hover:bg-white/20"
           >
             <SkipForward size={16} />
