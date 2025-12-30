@@ -21,12 +21,12 @@ const Watchlist = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
-  // Scroll to top
+  /* Scroll to top */
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  /* ✅ FETCH WATCHLIST — FIXED */
+  /* Fetch watchlist */
   const fetchEnrichedWatchlist = useCallback(async () => {
     if (!user?._id) return;
 
@@ -82,7 +82,7 @@ const Watchlist = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?._id]); // ✅ ONLY stable dependency
+  }, [user?._id]);
 
   useEffect(() => {
     fetchEnrichedWatchlist();
@@ -137,7 +137,8 @@ const Watchlist = () => {
 
   return (
     <div className="min-h-screen mt-10 bg-black text-white px-4 py-10">
-      <div className="sticky top-[72px] z-10 w-fit">
+      {/* Back */}
+      <div className="sticky top-[72px] z-10 w-fit mb-6">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur rounded-lg border border-white/10 hover:bg-black/90"
@@ -149,29 +150,41 @@ const Watchlist = () => {
 
       <h1 className="text-3xl font-bold mb-8">My Watchlist</h1>
 
+      {/* Grid */}
       <AnimatePresence>
         {!loading && watchlist.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
             {watchlist.map((item) => (
               <motion.div
                 key={`${item.movieId}-${item.mediaType}`}
-                className="relative group"
                 layout
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="relative group"
               >
-                <MovieCard
-                  movie={{
-                    id: item.movieId,
-                    title: item.title,
-                    poster_path: item.poster_path,
-                    vote_average: item.vote_average,
-                    media_type: item.mediaType,
-                  }}
-                />
+                {/* Card */}
+                <div className="rounded-xl overflow-hidden bg-[#0D253F]">
+                  <MovieCard
+                    movie={{
+                      id: item.movieId,
+                      title: item.title,
+                      poster_path: item.poster_path,
+                      vote_average: item.vote_average,
+                      media_type: item.mediaType,
+                    }}
+                  />
+                </div>
 
+                {/* Remove button */}
                 <button
                   onClick={() => handleRemove(item)}
                   disabled={removingId === item.movieId}
-                  className="absolute top-2 right-2 bg-red-600 p-2 rounded-full opacity-0 group-hover:opacity-100 transition"
+                  className="
+                    absolute top-2 right-2
+                    bg-red-600 p-2 rounded-full
+                    opacity-100 sm:opacity-0 sm:group-hover:opacity-100
+                    transition
+                  "
+                  aria-label={`Remove ${item.title} from watchlist`}
                 >
                   <Trash2 size={16} />
                 </button>
@@ -181,6 +194,7 @@ const Watchlist = () => {
         )}
       </AnimatePresence>
 
+      {/* Confirm Modal */}
       <AnimatePresence>
         {confirmOpen && (
           <motion.div
@@ -189,7 +203,12 @@ const Watchlist = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="bg-[#0D253F] p-6 rounded-xl w-full max-w-sm">
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
+              className="bg-[#0D253F] p-6 rounded-xl w-full max-w-sm"
+            >
               <h3 className="text-lg font-semibold mb-2">
                 Remove from Watchlist
               </h3>
@@ -211,7 +230,7 @@ const Watchlist = () => {
                   Remove
                 </button>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
