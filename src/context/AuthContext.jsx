@@ -1,27 +1,40 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* Load user from token */
+  /* Load user from token on refresh */
   useEffect(() => {
     const token = getToken();
+
     if (!token) {
       setLoading(false);
       return;
     }
 
-    // Avoid direct setState calls in effects
     try {
-      const decoded = jwt_decode(token);
-      setUser(decoded);
-    } catch (err) {
-      console.error("Token decoding failed", err);
+      const decoded = jwtDecode(token);
+
+      // Token expiry check
+      if (decoded.exp * 1000 < Date.now()) {
+        logoutService();
+        setUser(null);
+      } else {
+        setUser({
+          _id: decoded.userId || decoded.sub,
+          username: decoded.username || decoded.name || "",
+          email: decoded.email || "",
+        });
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
+      logoutService();
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -30,11 +43,13 @@ export const AuthProvider = ({ children }) => {
   /* LOGIN */
   const login = (token) => {
     saveToken(token);
-    const decoded = jwt_decode(token);
+
+    const decoded = jwtDecode(token);
+
     setUser({
       _id: decoded.userId || decoded.sub,
-      username: decoded.username || decoded.name,
-      email: decoded.email,
+      username: decoded.username || decoded.name || "",
+      email: decoded.email || "",
     });
   };
 
@@ -49,4 +64,13 @@ export const AuthProvider = ({ children }) => {
       {!loading && children}
     </AuthContext.Provider>
   );
+};
+
+/* Custom hook */
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+  return context;
 };
