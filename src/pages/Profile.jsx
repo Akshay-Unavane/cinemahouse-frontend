@@ -40,6 +40,7 @@ const Profile = () => {
   const { user, logout, updateUser } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   const [activeTab, setActiveTab] = useState("profile");
   const [newPassword, setNewPassword] = useState("");
@@ -87,26 +88,26 @@ const Profile = () => {
     },
   };
 
+  // useEffect(() =>{
+  //   if(user?.username){
+  //     setUsername(user.username)
+  //   }
+  // }, [user]);
+
   useEffect(() =>{
-    if(user?.username){
-      setUsername(user.username)
-    }
-  }, [user]);
+    if (!user || !token) return;
 
-  useEffect(() => {
-  if (!user) return;
-
-  try {
     getWatchlist()
-      .then(data => setWatchlistStats(data))
-      .catch(err => showToast(err.message || "Failed to load watchlist stats", "error"));
-  } catch (err) {
-    showToast(err.message || "Failed to load watchlist stats", "error");
+    .then(data => setWatchlistStats(data))
+    .catch(err => 
+      showToast(err.message || "Failed to fetch watchlist stats", "error")
+    );
+
+  }, [user, token])
+
+  if (!user){ 
+    return <div className="text-center py-24 text-white">Please login</div>;
   }
-}, [user]);
-
-  if (!user) return <div className="text-center py-24 text-white">Please login</div>;
-
   const passwordStrength = () => {
     if (newPassword.length < 6) return 30;
     if (/[A-Z]/.test(newPassword) && /\d/.test(newPassword)) return 100;
@@ -134,12 +135,15 @@ const Profile = () => {
   };
 
   const handleUsernameChange = async () => {
-    if (!username.trim()) return showToast("Username cannot be empty", "error");
+    if (!username.trim()){ 
+      return showToast("Username cannot be empty", "error");
+
+    }
     setUpdatingUsername(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/update-username`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token", res.token)}`, },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
         body: JSON.stringify({ email: user.email, newUsername: username }),
       });
       const data = await res.json();
@@ -149,8 +153,10 @@ const Profile = () => {
     } catch (err) {
       console.error(err);
       showToast(err.message || "Update failed", "error");
+    }finally {
+      setUpdatingUsername(false);
     }
-    setUpdatingUsername(false);
+    
   };
 
   const handleAvatarUpload = e => {
@@ -168,7 +174,7 @@ const Profile = () => {
       const res = await fetch(`${API_URL}/api/auth/delete-account`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token", res.token)}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
