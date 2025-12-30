@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
+import { updateUsername, deleteAccount } from "../service/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -134,29 +135,30 @@ const Profile = () => {
     setLoading(false);
   };
 
-  const handleUsernameChange = async () => {
-    if (!username.trim()){ 
-      return showToast("Username cannot be empty", "error");
-
-    }
-    setUpdatingUsername(true);
+  const handleUpdateUsername = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/auth/update-username`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
-        body: JSON.stringify({ email: user.email, newUsername: username }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Update failed");
-      updateUser(data.user);
-      showToast("Username updated", "success");
+      const newUsername = prompt("Enter new username:");
+      if (newUsername) {
+        const response = await updateUsername(newUsername);
+        alert(response.message);
+      }
     } catch (err) {
-      console.error(err);
-      showToast(err.message || "Update failed", "error");
-    }finally {
-      setUpdatingUsername(false);
+      console.error("UPDATE USERNAME ERROR:", err);
+      alert("Failed to update username");
     }
-    
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      if (window.confirm("Are you sure you want to delete your account?")) {
+        const response = await deleteAccount();
+        alert(response.message);
+        window.location.href = "/login";
+      }
+    } catch (err) {
+      console.error("DELETE ACCOUNT ERROR:", err);
+      alert("Failed to delete account");
+    }
   };
 
   const handleAvatarUpload = e => {
@@ -166,33 +168,6 @@ const Profile = () => {
     setAvatar(avatarURL);
     updateUser({ avatar: avatarURL });
     showToast("Avatar updated (preview only)", "success");
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    try {
-      const res = await fetch(`${API_URL}/api/auth/delete-account`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Delete failed");
-      }
-
-      showToast("Account deleted permanently", "success");
-      setShowDeleteModal(false);
-      await logout();
-      navigate("/", { replace: true });
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Account deletion failed", "error");
-    } finally {
-      setDeleting(false);
-    }
   };
 
   return (
@@ -395,14 +370,14 @@ const Profile = () => {
                 className="w-full bg-black/30 border border-white/20 rounded px-3 py-2"
               />
               <button
-                onClick={handleUsernameChange}
+                onClick={handleUpdateUsername}
                 disabled={updatingUsername}
                 className="w-full bg-[#01B4E4] text-black py-2 rounded font-semibold"
               >
                 Update Username
               </button>
             </div>
-          )}
+          }
         </div>
 
         {/* Delete Account Modal */}

@@ -64,3 +64,11 @@ export async function resetPassword(email, newPassword) {
   const { data } = await api.post("/reset-password", { email, newPassword });
   return data;
 }
+
+/* =========================
+   UPDATE USERNAME
+========================= */
+export async function updateUsername(newUsername) {
+  const { data } = await api.put("/auth/update-username", { newUsername });
+  return data;
+}
