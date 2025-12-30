@@ -113,7 +113,7 @@ const Profile = () => {
     if (newPassword !== confirmPassword) return showToast("Passwords do not match", "error");
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/auth/reset-password`, {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user.email, newPassword }),
@@ -132,7 +132,7 @@ const Profile = () => {
     if (!username.trim()) return showToast("Username cannot be empty", "error");
     setUpdatingUsername(true);
     try {
-      const res = await fetch(`${API_URL}/auth/update-username`, {
+      const res = await fetch(`${API_URL}/api/auth/update-username`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}`, },
         body: JSON.stringify({ email: user.email, newUsername: username }),
@@ -160,7 +160,7 @@ const Profile = () => {
   const handleDeleteAccount = async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/auth/delete-account`, {
+      const res = await fetch(`${API_URL}/api/auth/delete-account`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
