@@ -103,13 +103,13 @@ const Home = () => {
   }, [category, page]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white">
+    <div className="min-h-screen  bg-gradient-to-b from-black via-gray-900 to-black text-white">
       {/* HERO */}
-      <HeroSection movies={movies.slice(0, 5)} />
+      <HeroSection movies={movies.slice(0, 7)} />
 
       <main ref={contentRef} className="px-4 pb-24">
         {/* FILTER BAR */}
-        <div className="sticky top-0 z-30 bg-black/80 backdrop-blur-lg border-b border-white/10 mb-8">
+        <div className="sticky top-0 rounded-lg z-30 bg-black/80 backdrop-blur-lg border border-white/30 mb-8">
           <div className="max-w-7xl mx-auto py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="text-xl md:text-2xl font-extrabold">
               {OPTIONS[category]}
