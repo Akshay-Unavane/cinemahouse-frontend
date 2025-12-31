@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
-import { updateUsername, deleteAccount } from "../service/auth";
+import { updateUsername, deleteAccount, updateAvatarFile } from "../service/auth";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import {
   Chart as ChartJS,
@@ -171,13 +171,29 @@ const Profile = () => {
     }
   };
 
-  const handleAvatarUpload = e => {
+  const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // preview immediately
     const avatarURL = URL.createObjectURL(file);
     setAvatar(avatarURL);
-    updateUser({ avatar: avatarURL });
-    showToast("Avatar updated (preview only)", "success");
+
+    try {
+      showToast("Uploading avatar...", "info");
+      const res = await updateAvatarFile(file);
+      if (res && res.avatar) {
+        // server returns stored data URL
+        setAvatar(res.avatar);
+        updateUser({ avatar: res.avatar });
+        showToast("Avatar uploaded", "success");
+      } else {
+        showToast("Avatar uploaded (server did not return URL)", "warning");
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      showToast(err.message || "Avatar upload failed", "error");
+    }
   };
 
   return (

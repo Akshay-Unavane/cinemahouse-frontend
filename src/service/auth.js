@@ -74,3 +74,23 @@ export async function updateUsername(newUsername) {
   const { data } = await api.put("/auth/update-username", { newUsername });
   return data;
 }
+
+/* =========================
+   UPDATE AVATAR
+   Accepts a File object, converts to data URL, then sends to server
+========================= */
+export async function updateAvatarFile(file) {
+  if (!file) throw new Error("No file provided");
+
+  const readAsDataURL = (f) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(f);
+    });
+
+  const dataUrl = await readAsDataURL(file);
+  const { data } = await api.put("/auth/update-avatar", { avatar: dataUrl });
+  return data;
+}
