@@ -29,6 +29,45 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 const API_URL = import.meta.env.VITE_API_URL; // Ensure it ends WITHOUT trailing slash
 
+// Helper: compress/resize image file to JPEG via canvas
+async function compressImageFile(file, maxWidth = 800, quality = 0.8) {
+  if (!file) throw new Error("No file provided");
+
+  // Load image into an HTMLImageElement
+  const image = await new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image for compression"));
+    };
+    img.src = url;
+  });
+
+  const ratio = image.width / image.height;
+  const width = image.width > maxWidth ? maxWidth : image.width;
+  const height = Math.round(width / ratio);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const blob = await new Promise((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", quality)
+  );
+
+  if (!blob) throw new Error("Image compression failed");
+
+  const newName = (file.name || "avatar").replace(/\.[^/.]+$/, "") + ".jpg";
+  return new File([blob], newName, { type: "image/jpeg" });
+}
+
 const tabs = [
   { key: "profile", label: "Profile", icon: User },
   { key: "security", label: "Security", icon: Shield },
@@ -155,35 +194,36 @@ const Profile = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    try {
-      if (window.confirm("Are you sure you want to delete your account?")) {
-        const response = await deleteAccount();
-        alert(response.message);
-        window.location.href = "/login";
-      }
-    } catch (err) {
-      console.error("DELETE ACCOUNT ERROR:", err);
-      alert("Failed to delete account");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const handleAvatarUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // preview immediately
-    const avatarURL = URL.createObjectURL(file);
-    setAvatar(avatarURL);
+    // immediate preview (fast) while we compress/upload
+    const avatarPreview = URL.createObjectURL(file);
+    setAvatar(avatarPreview);
 
     try {
+      showToast("Compressing avatar...", "info");
+
+      const compressed = await compressImageFile(file, 800, 0.8);
+
+      // If still too large, try lower quality
+      const MAX_BYTES = 5 * 1024 * 1024; // match server limit
+      let finalFile = compressed;
+      if (finalFile.size > MAX_BYTES) {
+        showToast("Compressing at lower quality...", "info");
+        // try lower quality pass
+        finalFile = await compressImageFile(file, 800, 0.6);
+      }
+
+      if (finalFile.size > MAX_BYTES) {
+        throw new Error("Compressed image still exceeds 5MB limit. Choose a smaller image.");
+      }
+
       showToast("Uploading avatar...", "info");
-      const res = await updateAvatarFile(file);
+      const res = await updateAvatarFile(finalFile);
+
       if (res && res.avatar) {
-        // server returns stored data URL
         setAvatar(res.avatar);
         updateUser({ avatar: res.avatar });
         showToast("Avatar uploaded", "success");
@@ -195,7 +235,6 @@ const Profile = () => {
       showToast(err.message || "Avatar upload failed", "error");
     }
   };
-
   return (
     <div className="bg-gradient-to-br mt-10 from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-4 py-10 flex justify-center">
       <Motion.div
