@@ -91,6 +91,16 @@ export async function updateAvatarFile(file) {
     });
 
   const dataUrl = await readAsDataURL(file);
-  const { data } = await api.put("/auth/update-avatar", { avatar: dataUrl });
-  return data;
+  try {
+    const { data } = await api.put("/auth/update-avatar", { avatar: dataUrl });
+    return data;
+  } catch (err) {
+    if (err.response) {
+      const status = err.response.status;
+      const respData = err.response.data;
+      const message = respData && respData.message ? respData.message : err.response.statusText || "Server error";
+      throw new Error(`${status} ${message}`);
+    }
+    throw new Error(err.message || "Network error");
+  }
 }
