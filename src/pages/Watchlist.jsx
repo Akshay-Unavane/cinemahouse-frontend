@@ -174,19 +174,24 @@ const Watchlist = () => {
                   />
                 </div>
 
-                {/* Remove button */}
+                {/* Remove button (stop propagation so parent click doesn't navigate) */}
                 <button
-                  onClick={() => handleRemove(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(item);
+                  }}
                   disabled={removingId === item.movieId}
-                  className="
-                    absolute top-2 right-2
-                    bg-red-600 p-2 rounded-full
+                  className={
+                    `absolute top-2 right-2 z-30
+                    bg-red-600 p-3 rounded-full
                     opacity-100 sm:opacity-0 sm:group-hover:opacity-100
-                    transition
-                  "
+                    transition focus:outline-none focus:ring-2 focus:ring-red-300
+                    `
+                  }
                   aria-label={`Remove ${item.title} from watchlist`}
                 >
-                  <Trash2 size={16} />
+                  <span className="sr-only">Remove</span>
+                  <Trash2 size={18} />
                 </button>
               </motion.div>
             ))}
