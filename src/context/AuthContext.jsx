@@ -60,8 +60,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  /* Update user (merge fields) */
+  const updateUser = (updates = {}) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : { ...updates }));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );
