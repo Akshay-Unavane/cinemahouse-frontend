@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ExternalLink, ArrowLeft } from "lucide-react"; // ✅ Added ArrowLeft
+import { ExternalLink, ArrowLeft, ChevronLeft } from "lucide-react"; // ✅ Added ArrowLeft
 import { motion } from "framer-motion";
 
 const API_URL = "https://api.themoviedb.org/3";
@@ -64,14 +64,13 @@ const PersonDetails = () => {
     <div className="min-h-screen bg-black text-white px-4 py-8">
       <div className="max-w-7xl mx-auto space-y-12">
 
-        {/* BACK BUTTON */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[#01B4E4] font-semibold mb-4"
-        >
-          <ArrowLeft size={20} /> Back
-        </button>
-
+       {/* BACK BUTTON */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed top-20 md:top-28 left-4 z-40 flex items-center gap-2 px-4 py-2 bg-black/70 rounded-lg hover:bg-black/90"
+      >
+        <ChevronLeft size={18} /> Back
+      </button>
         {/* HEADER */}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* IMAGE */}
