@@ -281,7 +281,7 @@ function MovieDetail() {
             <h2 className="text-xl md:text-2xl font-bold mb-4">
               Recommendations
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
               {movie.recommendations.results.slice(0, 12).map((rec) => (
                 <img
                   key={rec.id}

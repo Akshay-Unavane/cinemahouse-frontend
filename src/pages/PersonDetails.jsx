@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ExternalLink, ArrowLeft, ChevronLeft } from "lucide-react"; // ✅ Added ArrowLeft
+import { useEffect, useState, useMemo } from "react";
+import { ExternalLink, ArrowLeft } from "lucide-react"; // cleaned imports
 import { motion } from "framer-motion";
+import { fetchAwardsFromWikidata } from "../utils/fetchAwards";
+import { fetchFamilyFromWikidata } from "../utils/fetchFamily";
 
 const API_URL = "https://api.themoviedb.org/3";
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -15,6 +17,15 @@ const PersonDetails = () => {
   const [social, setSocial] = useState({});
   const [loading, setLoading] = useState(true);
   const [showFullBio, setShowFullBio] = useState(false);
+  const [awards, setAwards] = useState([]);
+  const [family, setFamily] = useState({});
+
+  const flatFamily = useMemo(() => {
+    if (!family || typeof family !== 'object') return [];
+    return Object.entries(family).flatMap(([relation, members]) =>
+      (members || []).map(m => ({ ...m, relation }))
+    );
+  }, [family]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -32,6 +43,19 @@ const PersonDetails = () => {
         setPerson(personData);
         setCredits(creditsData.cast || []);
         setSocial(socialData);
+
+        if (personData.imdb_id) {
+          const awardList = await fetchAwardsFromWikidata(
+            personData.imdb_id
+          );
+          setAwards(awardList)
+        }
+        if (personData.imdb_id) {
+  const familyData = await fetchFamilyFromWikidata(
+    personData.imdb_id
+  );
+  setFamily(familyData);
+}
       } catch (error) {
         console.error("Person details error:", error);
       } finally {
@@ -69,7 +93,7 @@ const PersonDetails = () => {
         onClick={() => navigate(-1)}
         className="fixed top-20 md:top-28 left-4 z-40 flex items-center gap-2 px-4 py-2 bg-black/70 rounded-lg hover:bg-black/90"
       >
-        <ChevronLeft size={18} /> Back
+        <ArrowLeft size={18} /> Back
       </button>
         {/* HEADER */}
         <div className="flex flex-col lg:flex-row gap-8">
@@ -161,13 +185,70 @@ const PersonDetails = () => {
         </div>
 
         {/* INFO */}
-        <div className="grid sm:grid-cols-2 gap-6">
-          <InfoCard title="Family">
-            Information not publicly available
-          </InfoCard>
-          <InfoCard title="Awards">
-            No official award data available
-          </InfoCard>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <InfoCard title="Family">
+          {flatFamily && flatFamily.length > 0 ? (
+            <div className="flex flex-wrap gap-4">
+              {flatFamily.map((m, i) => (
+                <button
+                  key={i}
+                  onClick={() =>
+                    m.tmdbId
+                      ? navigate(`/person/${m.tmdbId}`)
+                      : window.open(
+                          `https://www.google.com/search?q=${encodeURIComponent(m.name)}`,
+                          "_blank"
+                        )
+                  }
+                  className="flex-initial basis-1/3 sm:basis-[140px] md:basis-[160px] flex flex-col items-center bg-white/5 p-3 rounded-xl hover:bg-white/10 transition"
+                  aria-label={`Open ${m.name}`}
+                >
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-white font-semibold text-sm">
+                    {m.name ? m.name.split(" ").map(n => n[0]).slice(0, 2).join("") : "--"}
+                  </div>
+
+                  <div className="mt-2 text-sm text-center text-white truncate max-w-[120px]">
+                    {m.name}
+                  </div>
+
+                  <div className="text-xs text-gray-400 mt-1 capitalize">
+                    {m.relation === "children" ? "Child" : m.relation}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-400">No family data</div>
+          )}
+        </InfoCard>
+
+
+
+<InfoCard title="Awards">
+  {awards && awards.length > 0 ? (
+    <div className="max-h-80 overflow-y-auto scrollbar-hide pr-2">
+      <div className="space-y-3">
+        {awards.map((award, index) => (
+          <div key={index} className="p-3 bg-white/5 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">🏆</div>
+              <div className="flex-1">
+                <div className="font-semibold text-white">{award.name || 'Unknown Award'}</div>
+                <div className="text-sm text-gray-400">{award.category || 'General'}</div>
+              </div>
+              {award.year && (
+                <div className="ml-2 text-xs bg-white/10 text-gray-200 px-2 py-1 rounded">{award.year}</div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : (
+    <div className="text-gray-400">No publicly recorded awards</div>
+  )}
+</InfoCard>
+
         </div>
 
        {/* MOVIES */}
@@ -214,7 +295,7 @@ const Stat = ({ title, value }) => (
 const InfoCard = ({ title, children }) => (
   <div className="bg-white/10 rounded-xl p-6">
     <h3 className="text-lg font-semibold mb-2">{title}</h3>
-    <p className="text-gray-400">{children}</p>
+    <div className="text-gray-400">{children}</div>
   </div>
 );
 

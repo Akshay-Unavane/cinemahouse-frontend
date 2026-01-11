@@ -235,6 +235,23 @@ const Profile = () => {
       showToast(err.message || "Avatar upload failed", "error");
     }
   };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure you want to delete your account? This is permanent.")) return;
+    setDeleting(true);
+    try {
+      const res = await deleteAccount();
+      if (res && res.message) showToast(res.message, "success");
+      else showToast("Account deleted", "success");
+      // after deletion, logout locally
+      await logout();
+    } catch (err) {
+      console.error("Delete account error:", err);
+      showToast(err?.message || "Failed to delete account", "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
   return (
     <div className="bg-gradient-to-br mt-10 from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-4 py-10 flex justify-center">
       <Motion.div
