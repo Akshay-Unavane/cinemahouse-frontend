@@ -153,19 +153,21 @@ const Navbar = () => {
 
         {/* DESKTOP LINKS */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`text-sm font-semibold transition flex items-center gap-2 ${
-                location.pathname === link.path
-                  ? "text-[#01B4E4]"
-                  : "text-gray-300 hover:text-white"
-              }`}
-            >
-              {link.icon} {link.label}
-            </Link>
-          ))}
+          {navLinks
+            .filter((l) => l.path !== "/watchlist" || user)
+            .map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`text-sm font-semibold transition flex items-center gap-2 ${
+                  location.pathname === link.path
+                    ? "text-[#01B4E4]"
+                    : "text-gray-300 hover:text-white"
+                }`}
+              >
+                {link.icon} {link.label}
+              </Link>
+            ))}
         </div>
 
         {/* ACTIONS */}
@@ -230,20 +232,22 @@ const Navbar = () => {
             className="md:hidden bg-[#0D253F] border-t border-white/10 overflow-hidden"
           >
             <div className="flex flex-col px-4 py-4 gap-3">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`text-sm font-medium flex items-center gap-2  ${
-                    location.pathname === link.path
-                      ? "text-[#01B4E4]"
-                      : "text-gray-300"
-                  }`}
-                >
-                {link.icon}  {link.label}
-                </Link>
-              ))}
+              {navLinks
+                .filter((l) => l.path !== "/watchlist" || user)
+                .map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileOpen(false)}
+                    className={`text-sm font-medium flex items-center gap-2  ${
+                      location.pathname === link.path
+                        ? "text-[#01B4E4]"
+                        : "text-gray-300"
+                    }`}
+                  >
+                  {link.icon}  {link.label}
+                  </Link>
+                ))}
 
               <div className="border-t border-white/10 pt-3">
                 {user ? (
