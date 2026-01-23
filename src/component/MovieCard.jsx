@@ -10,14 +10,14 @@ import {
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
-import { addToWatchlist } from "../service/watchlist";
+import { addToWatchlist, removeFromWatchlist } from "../service/watchlist";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/w500";
 const FALLBACK_IMG = "/placeholder.jpg";
 
 function MovieCard({ movie }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { showToast } = useToast();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -69,18 +69,36 @@ function MovieCard({ movie }) {
       return setMenuOpen(false);
     }
 
-    try {
-      await addToWatchlist({
-        movieId: movie.id,
-        title,
-        poster_path: movie.poster_path,
-        mediaType,
-      });
-      showToast("Added to watchlist!", "success");
-    } catch {
-      showToast("Already in watchlist or failed", "error");
-    }
+    // Optimistic update: add locally then call API
+    const item = { movieId: movie.id, title, poster_path: movie.poster_path, mediaType };
+    updateUser({ watchlist: [...(user.watchlist || []), item] });
     setMenuOpen(false);
+    try {
+      await addToWatchlist(item);
+      showToast("Added to watchlist!", "success");
+    } catch (err) {
+      // revert
+      updateUser({ watchlist: (user.watchlist || []).filter((m) => !(m.movieId === item.movieId && m.mediaType === item.mediaType)) });
+      showToast(err.message || "Failed to add to watchlist", "error");
+    }
+  };
+
+  const handleRemoveFromWatchlist = async (e) => {
+    e.stopPropagation();
+    if (!user) return setMenuOpen(false);
+
+    // Optimistic remove
+    const prev = user.watchlist || [];
+    updateUser({ watchlist: prev.filter((m) => !(m.movieId === movie.id && m.mediaType === mediaType)) });
+    setMenuOpen(false);
+    try {
+      await removeFromWatchlist(movie.id, mediaType);
+      showToast("Removed from watchlist", "success");
+    } catch (err) {
+      // revert
+      updateUser({ watchlist: prev });
+      showToast(err.message || "Failed to remove from watchlist", "error");
+    }
   };
 
   const handleShare = async (e) => {
@@ -143,12 +161,21 @@ function MovieCard({ movie }) {
             exit={{ opacity: 0, y: -6 }}
             className="absolute right-2 top-12 w-48 bg-zinc-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
           >
-            <button
-              onClick={handleAddToWatchlist}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
-            >
-              <Bookmark size={16} /> Add to Watchlist
-            </button>
+            {user && (user.watchlist || []).some((m) => m.movieId === movie.id && m.mediaType === mediaType) ? (
+              <button
+                onClick={handleRemoveFromWatchlist}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+              >
+                <Bookmark size={16} /> Remove from Watchlist
+              </button>
+            ) : (
+              <button
+                onClick={handleAddToWatchlist}
+                className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+              >
+                <Bookmark size={16} /> Add to Watchlist
+              </button>
+            )}
 
             <button
               onClick={handleShare}

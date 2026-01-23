@@ -60,7 +60,7 @@ const Register = () => {
     setLoading(true);
     try {
       await registerApi(username, email, password);
-      showToast("Account created successfully 🎉", "success");
+      showToast("Account created successfully ", "success");
       setForm({ username: "", email: "", password: "" });
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {

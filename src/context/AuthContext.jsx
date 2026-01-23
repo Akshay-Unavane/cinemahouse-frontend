@@ -1,6 +1,7 @@
 /* @refresh reset */
 import { useEffect, useState } from "react";
 import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
+import { getWatchlist } from "../service/watchlist";
 import { AuthContext } from "./contexts";
 
 import jwtDecode from "jwt-decode";
@@ -18,27 +19,37 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    try {
-      const decoded = jwtDecode(token);
+    (async () => {
+      try {
+        const decoded = jwtDecode(token);
 
-      // Token expiry check
-      if (decoded.exp * 1000 < Date.now()) {
+        // Token expiry check
+        if (decoded.exp * 1000 < Date.now()) {
+          logoutService();
+          setUser(null);
+        } else {
+          const baseUser = {
+            _id: decoded.userId || decoded.sub,
+            username: decoded.username || decoded.name || "",
+            email: decoded.email || "",
+          };
+
+          try {
+            const wl = await getWatchlist();
+            setUser({ ...baseUser, watchlist: wl });
+          } catch (err) {
+            console.warn('Could not fetch watchlist on init:', err?.message || err);
+            setUser({ ...baseUser, watchlist: [] });
+          }
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
         logoutService();
         setUser(null);
-      } else {
-        setUser({
-          _id: decoded.userId || decoded.sub,
-          username: decoded.username || decoded.name || "",
-          email: decoded.email || "",
-        });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Invalid token:", error);
-      logoutService();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+    })();
   }, []);
 
   /* LOGIN */
@@ -47,11 +58,16 @@ export const AuthProvider = ({ children }) => {
 
     const decoded = jwtDecode(token);
 
-    setUser({
+    const baseUser = {
       _id: decoded.userId || decoded.sub,
       username: decoded.username || decoded.name || "",
       email: decoded.email || "",
-    });
+    };
+
+    // fetch watchlist asynchronously, set empty list on failure
+    getWatchlist()
+      .then((wl) => setUser({ ...baseUser, watchlist: wl }))
+      .catch(() => setUser({ ...baseUser, watchlist: [] }));
   };
 
   /* LOGOUT */
