@@ -159,7 +159,7 @@ function MovieCard({ movie }) {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="absolute right-2 top-12 w-48 bg-zinc-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+            className="absolute right-2 top-12 w-52 bg-zinc-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
           >
             {user && (user.watchlist || []).some((m) => m.movieId === movie.id && m.mediaType === mediaType) ? (
               <button
