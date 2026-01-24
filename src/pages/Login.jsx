@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertTriangle } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
@@ -13,12 +13,15 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    email: "",
+    email: localStorage.getItem("rememberEmail") || "",
     password: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(!!localStorage.getItem("rememberEmail"));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [capsLock, setCapsLock] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -39,6 +42,13 @@ const Login = () => {
     try {
       const res = await loginApi(form.email, form.password);
       login(res.token);
+
+      if (remember) {
+        localStorage.setItem("rememberEmail", form.email);
+      } else {
+        localStorage.removeItem("rememberEmail");
+      }
+
       showToast("Login successful!", "success");
       navigate("/", { replace: true });
     } catch (err) {
@@ -49,6 +59,9 @@ const Login = () => {
     }
   };
 
+  const passwordStrength =
+    form.password.length >= 8 ? "Strong password" : "Use at least 8 characters";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white px-4">
       {loading && <Loader message="Logging in..." />}
@@ -57,7 +70,7 @@ const Login = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+        className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_25px_80px_rgba(0,0,0,0.7)]"
       >
         <h1 className="text-3xl font-extrabold text-center mb-2">
           🎬 Welcome Back
@@ -68,10 +81,11 @@ const Login = () => {
 
         {error && (
           <Motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-4 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2 text-rose-400 text-sm"
+            initial={{ x: -10, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="mb-4 flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/30 px-4 py-2 text-rose-400 text-sm"
           >
+            <AlertTriangle size={16} />
             {error}
           </Motion.div>
         )}
@@ -83,6 +97,7 @@ const Login = () => {
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400" size={18} />
               <input
+                autoFocus
                 type="email"
                 name="email"
                 value={form.email}
@@ -104,28 +119,47 @@ const Login = () => {
                 name="password"
                 value={form.password}
                 onChange={handleChange}
+                onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
                 placeholder="••••••••"
                 autoComplete="current-password"
                 className="w-full pl-10 pr-12 py-2.5 rounded-lg bg-gray-900/80 border border-white/10 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition"
               />
               <button
                 type="button"
+                aria-label="Toggle password visibility"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+
+            <div className="flex justify-between mt-1 text-xs">
+              <span className="text-gray-400">{passwordStrength}</span>
+              {capsLock && <span className="text-yellow-400">Caps Lock ON</span>}
+            </div>
+          </div>
+
+          {/* Remember Me */}
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={() => setRemember(!remember)}
+              className="accent-cyan-400"
+            />
+            Remember me
           </div>
 
           {/* Submit */}
-          <button
+          <Motion.button
+            whileTap={{ scale: 0.97 }}
             type="submit"
             disabled={loading}
             className="w-full mt-2 py-2.5 rounded-lg font-semibold text-black bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 transition disabled:opacity-50"
           >
-            Login
-          </button>
+            {loading ? "Logging in..." : "Login"}
+          </Motion.button>
         </form>
 
         {/* Footer */}
