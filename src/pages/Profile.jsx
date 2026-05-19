@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
+import { getToken } from "../service/auth";
 import { updateUsername, deleteAccount, updateAvatarFile } from "../service/auth";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import {
@@ -78,7 +79,7 @@ const tabs = [
 const Profile = () => {
   const { user, logout, updateUser } = useAuth();
   const { showToast } = useToast();
-  const token = localStorage.getItem("token");
+  const token = getToken();
 
   const [activeTab, setActiveTab] = useState("profile");
   const [newPassword, setNewPassword] = useState("");
@@ -93,10 +94,10 @@ const Profile = () => {
   const [updatingUsername, setUpdatingUsername] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const sessionHistory = [
-    { id: 1, date: "20 Dec 2025 • 10:30 AM", ip: "192.168.1.2" },
-    { id: 2, date: "19 Dec 2025 • 05:15 PM", ip: "192.168.1.5" },
-  ];
+  const [sessionHistory, setSessionHistory] = useState([]);
+
+  // Persisted per-user session key
+  const sessionKey = user ? `ml_sessions_${user._id}` : null;
 
   const movieCount = watchlistStats.filter(item => item.mediaType === "movie").length;
   const tvCount = watchlistStats.filter(item => item.mediaType === "tv").length;
@@ -140,6 +141,39 @@ const Profile = () => {
       .catch((err) =>
         showToast(err.message || "Failed to fetch watchlist stats", "error")
       );
+
+    // Load and update session history
+    (async () => {
+      try {
+        const existing = sessionKey ? sessionStorage.getItem(sessionKey) : null;
+        const parsed = existing ? JSON.parse(existing) : [];
+
+        // try to resolve public IP (best-effort)
+        let ip = "unknown";
+        try {
+          const r = await fetch("https://api.ipify.org?format=json");
+          if (r.ok) {
+            const d = await r.json();
+            ip = d.ip || "unknown";
+          }
+        } catch (e) {
+          // ignore network errors
+        }
+
+        const entry = {
+          id: Date.now(),
+          date: new Date().toLocaleString(),
+          ip,
+        };
+
+        // Append and keep only the last 10 sessions
+        const updated = [entry, ...parsed].slice(0, 10);
+        if (sessionKey) sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+        setSessionHistory(updated);
+      } catch (e) {
+        console.warn("Session history update failed:", e);
+      }
+    })();
 
   }, [user, token, showToast]);
 
@@ -436,15 +470,22 @@ const Profile = () => {
           {activeTab === "activity" && (
             <div className="space-y-3">
               <h2 className="text-xl font-semibold">Session History</h2>
-              {sessionHistory.map(s => (
-                <div
-                  key={s.id}
-                  className="flex justify-between bg-black/30 px-4 py-3 rounded hover:bg-black/40 transition"
-                >
-                  <span>{s.date}</span>
-                  <span className="text-gray-400">{s.ip}</span>
-                </div>
-              ))}
+                      <p className="text-gray-400">Total sessions: <span className="font-semibold text-white">{sessionHistory.length}</span></p>
+                      {sessionHistory.length === 0 && (
+                        <div className="text-gray-400">No sessions recorded yet.</div>
+                      )}
+                      {sessionHistory.map(s => (
+                        <div
+                          key={s.id}
+                          className="flex flex-col sm:flex-row justify-between bg-black/30 px-4 py-3 rounded hover:bg-black/40 transition"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{s.date}</span>
+                            <span className="text-sm text-gray-400">Session ID: {s.id}</span>
+                          </div>
+                          <div className="text-gray-400 mt-2 sm:mt-0">IP: {s.ip}</div>
+                        </div>
+                      ))}
             </div>
           )}
 

@@ -142,11 +142,12 @@ function MovieCard({ movie }) {
       {/* MENU BUTTON */}
       <button
         aria-label="More options"
+        aria-expanded={menuOpen}
         onClick={(e) => {
           e.stopPropagation();
           setMenuOpen((v) => !v);
         }}
-        className="absolute top-2 right-2 z-20 bg-black/70 p-2 rounded-full hover:bg-black/90 transition"
+        className="absolute top-2 right-2 z-20 bg-black/70 p-3 rounded-full hover:bg-black/90 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
       >
         <Ellipsis size={16} className="text-white" />
       </button>
@@ -159,19 +160,21 @@ function MovieCard({ movie }) {
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="absolute right-2 top-12 w-52 bg-zinc-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
+            role="menu"
+            aria-label="Movie options"
+            className="absolute right-2 top-12 w-56 bg-zinc-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden"
           >
             {user && (user.watchlist || []).some((m) => m.movieId === movie.id && m.mediaType === mediaType) ? (
               <button
                 onClick={handleRemoveFromWatchlist}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+                className="flex items-center gap-2 w-full px-4 py-4 text-sm hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               >
                 <Bookmark size={16} /> Remove from Watchlist
               </button>
             ) : (
               <button
                 onClick={handleAddToWatchlist}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+                className="flex items-center gap-2 w-full px-4 py-4 text-sm hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               >
                 <Bookmark size={16} /> Add to Watchlist
               </button>
@@ -179,14 +182,14 @@ function MovieCard({ movie }) {
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+              className="flex items-center gap-2 w-full px-4 py-4 text-sm hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
               <LinkIcon size={16} /> Copy Link
             </button>
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 w-full px-4 py-3 text-sm hover:bg-white/10"
+              className="flex items-center gap-2 w-full px-4 py-4 text-sm hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
             >
               <Share2 size={16} /> Share
             </button>

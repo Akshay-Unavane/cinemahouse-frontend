@@ -1,5 +1,5 @@
 /* @refresh reset */
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
 import { getWatchlist } from "../service/watchlist";
 import { AuthContext } from "./contexts";
@@ -87,5 +87,7 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+
 
 /* Note: `useAuth` moved to a separate module to avoid fast-refresh export issues. */

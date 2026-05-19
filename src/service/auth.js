@@ -1,18 +1,62 @@
 import axios from "axios";
 
 /* =========================
-   TOKEN HELPERS
+   TOKEN HELPERS (improved)
+   - store token in sessionStorage (not localStorage)
+   - keep a separate expiry timestamp and auto-clear expired tokens
 ========================= */
+const TOKEN_KEY = "ml_token";
+const TOKEN_EXP_KEY = "ml_token_exp";
+
+function parseJwtPayload(token) {
+  try {
+    const payload = token.split(".")[1];
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
 export function saveToken(token) {
-  localStorage.setItem("token", token);
+  try {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    const decoded = parseJwtPayload(token);
+    if (decoded && decoded.exp) {
+      sessionStorage.setItem(TOKEN_EXP_KEY, String(decoded.exp * 1000));
+    } else {
+      sessionStorage.removeItem(TOKEN_EXP_KEY);
+    }
+  } catch (e) {
+    // fallback: ensure no exceptions bubble up
+    console.warn("saveToken failed:", e);
+  }
 }
 
 export function getToken() {
-  return localStorage.getItem("token");
+  try {
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    const exp = sessionStorage.getItem(TOKEN_EXP_KEY);
+    if (!token) return null;
+    if (exp && Date.now() > Number(exp)) {
+      // token expired; clear and return null
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_EXP_KEY);
+      return null;
+    }
+    return token;
+  } catch (e) {
+    return null;
+  }
 }
 
 export function logout() {
-  localStorage.removeItem("token");
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_EXP_KEY);
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 /* =========================

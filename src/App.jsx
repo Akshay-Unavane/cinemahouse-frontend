@@ -19,12 +19,14 @@ import Footer from "./component/Footer";
 
 import "./App.css";
 
+
 function App() {
   return (
     <BrowserRouter>
       <NavBar />
 
       <Routes>
+  
         <Route path="/" element={<Home />} />
         <Route path="/movies" element={<Movies />} />
         <Route path="/tv-shows" element={<TVShows />} />

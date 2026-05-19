@@ -4,10 +4,12 @@ import { Mail, Lock, User, Eye, EyeOff, Clapperboard } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { useToast } from "../context/useToast";
 import { register as registerApi } from "../service/auth";
+import { useAuth } from "../context/useAuth";
 
 const Register = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { login } = useAuth();
 
   const [form, setForm] = useState({
     username: "",
@@ -59,13 +61,21 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await registerApi(username, email, password);
-      showToast("Account created successfully ", "success");
+      const res = await registerApi(username, email, password);
+
+      // Auto-login after successful registration
+      if (res?.token) {
+        login(res.token);
+        showToast("Account created and logged in", "success");
+        navigate("/", { replace: true });
+      } else {
+        showToast("Account created successfully", "success");
+        setTimeout(() => navigate("/login"), 1200);
+      }
       setForm({ username: "", email: "", password: "" });
-      setTimeout(() => navigate("/login"), 1200);
     } catch (err) {
       showToast(
-        err.response?.data?.message || "Registration failed",
+        err.response?.data?.message || err.message || "Registration failed",
         "error"
       );
     } finally {

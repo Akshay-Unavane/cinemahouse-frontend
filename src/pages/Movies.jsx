@@ -65,7 +65,7 @@ function Movies() {
   useEffect(() => {
     const fetchMovies = async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
 
         let url = "";
 

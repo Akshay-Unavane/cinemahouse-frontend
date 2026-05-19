@@ -112,7 +112,11 @@ const HeroSection = () => {
                 >
                   <div className="max-w-xl lg:max-w-2xl text-white space-y-4">
                     <span className="text-xs uppercase tracking-widest text-[#01B4E4]">
+<<<<<<< HEAD
                        Recommended For You
+=======
+                      Recommanded for you
+>>>>>>> fbec4f3 (Change the loading oart on the movie section)
                     </span>
 
                     <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
