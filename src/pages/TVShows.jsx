@@ -59,7 +59,7 @@ function TVShows() {
   useEffect(() => {
     const fetchShows = async () => {
       try {
-        setLoading(true);
+        // setLoading(true);
 
         const url = debouncedSearch
           ? `${SEARCH_URL}?api_key=${API_KEY}&query=${encodeURIComponent(
