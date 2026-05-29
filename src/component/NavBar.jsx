@@ -207,7 +207,7 @@ const Navbar = () => {
               CinemaHouse
             </span>
             <span className="sm:hidden text-base font-bold text-white tracking-wide">
-              CH
+              CinemaHouse
             </span>
           </Link>
 
