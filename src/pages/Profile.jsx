@@ -1,6 +1,7 @@
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -13,28 +14,39 @@ import {
   User,
   Menu,
   X,
+  LayoutDashboard,
+  BookmarkCheck,
+  Mail,
+  Bell,
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
-import { getToken } from "../service/auth";
-import { updateUsername, deleteAccount, updateAvatarFile } from "../service/auth";
-import { motion as Motion, AnimatePresence } from "framer-motion";
 import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend
-} from "chart.js";
+  updateUsername,
+  deleteAccount,
+  updateAvatarFile,
+  changePassword,
+} from "../service/auth";
+import { motion as Motion, AnimatePresence } from "framer-motion";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
+import Loader from "../component/Loader";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const API_URL = import.meta.env.VITE_API_URL; // Ensure it ends WITHOUT trailing slash
+const PREFS_KEY = "ml_profile_prefs";
 
-// Helper: compress/resize image file to JPEG via canvas
+function loadPrefs() {
+  try {
+    return JSON.parse(localStorage.getItem(PREFS_KEY)) || {
+      emailUpdates: true,
+      showSpoilers: false,
+    };
+  } catch {
+    return { emailUpdates: true, showSpoilers: false };
+  }
+}
+
 async function compressImageFile(file, maxWidth = 800, quality = 0.8) {
-  if (!file) throw new Error("No file provided");
-
-  // Load image into an HTMLImageElement
   const image = await new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -44,7 +56,7 @@ async function compressImageFile(file, maxWidth = 800, quality = 0.8) {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("Failed to load image for compression"));
+      reject(new Error("Failed to load image"));
     };
     img.src = url;
   });
@@ -52,307 +64,382 @@ async function compressImageFile(file, maxWidth = 800, quality = 0.8) {
   const ratio = image.width / image.height;
   const width = image.width > maxWidth ? maxWidth : image.width;
   const height = Math.round(width / ratio);
-
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(image, 0, 0, width, height);
-
+  canvas.getContext("2d").drawImage(image, 0, 0, width, height);
   const blob = await new Promise((resolve) =>
     canvas.toBlob(resolve, "image/jpeg", quality)
   );
-
   if (!blob) throw new Error("Image compression failed");
-
-  const newName = (file.name || "avatar").replace(/\.[^/.]+$/, "") + ".jpg";
-  return new File([blob], newName, { type: "image/jpeg" });
+  return new File([blob], "avatar.jpg", { type: "image/jpeg" });
 }
 
-const tabs = [
+const allTabs = [
   { key: "profile", label: "Profile", icon: User },
   { key: "security", label: "Security", icon: Shield },
   { key: "activity", label: "Activity", icon: Clock },
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
+const adminTabs = [{ key: "activity", label: "Activity", icon: Clock }];
+
 const Profile = () => {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, loading: authLoading } = useAuth();
   const { showToast } = useToast();
-  const token = getToken();
+  const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("profile");
+  const [pageLoading, setPageLoading] = useState(true);
+
+  const [username, setUsername] = useState("");
+  const [avatar, setAvatar] = useState(null);
+  const [watchlistStats, setWatchlistStats] = useState([]);
+
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [username, setUsername] = useState(user?.username || "");
-  const [avatar, setAvatar] = useState(user?.avatar || null);
-  const [watchlistStats, setWatchlistStats] = useState([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [updatingUsername, setUpdatingUsername] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
 
+  const [prefs, setPrefs] = useState(loadPrefs);
   const [sessionHistory, setSessionHistory] = useState([]);
 
-  // Persisted per-user session key
-  const sessionKey = user ? `ml_sessions_${user._id}` : null;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [savingUsername, setSavingUsername] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const movieCount = watchlistStats.filter(item => item.mediaType === "movie").length;
-  const tvCount = watchlistStats.filter(item => item.mediaType === "tv").length;
+  const isAdmin = (user?.role || "").toLowerCase() === "admin";
+  const isPrime = (user?.role || "").toLowerCase() === "prime";
+  const accountLabel = isAdmin ? "Administrator" : isPrime ? "Prime" : "Free";
+  const visibleTabs = isAdmin ? adminTabs : allTabs;
 
-  const watchlistData = {
-    labels: ["Movies", "TV Shows"],
-    datasets: [
-      {
-        label: "Watchlist",
-        data: [movieCount, tvCount],
-        backgroundColor: ["#FACC15", "#60A5FA"],
-        borderColor: ["#FACC15", "#60A5FA"],
-        borderWidth: 1,
-      },
-    ],
+  const movieCount = watchlistStats.filter((i) => i.mediaType === "movie").length;
+  const tvCount = watchlistStats.filter((i) => i.mediaType === "tv").length;
+
+  const passwordStrength = () => {
+    if (!newPassword) return 0;
+    if (newPassword.length < 6) return 25;
+    if (newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /\d/.test(newPassword)) return 100;
+    return 60;
   };
 
-  const watchlistChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: {
-          color: "white",
-        },
-      },
-    },
-  };
+  const syncUserFields = useCallback(() => {
+    if (!user) return;
+    setUsername(user.username || "");
+    setAvatar(user.avatar || null);
+  }, [user]);
 
-  // useEffect(() =>{
-  //   if(user?.username){
-  //     setUsername(user.username)
-  //   }
-  // }, [user]);
+  const loadWatchlist = useCallback(async () => {
+    try {
+      const data = await getWatchlist();
+      setWatchlistStats(Array.isArray(data) ? data : []);
+    } catch (err) {
+      showToast(err.message || "Failed to load watchlist", "error");
+    }
+  }, [showToast]);
 
-  useEffect(() =>{
-    if (!user || !token) return;
+  const loadSessionHistory = useCallback(async () => {
+    if (!user?._id) return;
+    const sessionKey = `ml_sessions_${user._id}`;
+    const activeKey = `ml_active_session_${user._id}`;
 
-    getWatchlist()
-      .then((data) => setWatchlistStats(data))
-      .catch((err) =>
-        showToast(err.message || "Failed to fetch watchlist stats", "error")
-      );
+    try {
+      const existing = JSON.parse(sessionStorage.getItem(sessionKey) || "[]");
 
-    // Load and update session history
-    (async () => {
-      try {
-        const existing = sessionKey ? sessionStorage.getItem(sessionKey) : null;
-        const parsed = existing ? JSON.parse(existing) : [];
-
-        // try to resolve public IP (best-effort)
-        let ip = "unknown";
+      if (!sessionStorage.getItem(activeKey)) {
+        let ip = "—";
         try {
           const r = await fetch("https://api.ipify.org?format=json");
           if (r.ok) {
             const d = await r.json();
-            ip = d.ip || "unknown";
+            ip = d.ip || "—";
           }
-        } catch (e) {
-          // ignore network errors
+        } catch {
+          /* optional */
         }
 
         const entry = {
           id: Date.now(),
           date: new Date().toLocaleString(),
           ip,
+          device: /Mobile/i.test(navigator.userAgent) ? "Mobile" : "Desktop",
         };
-
-        // Append and keep only the last 10 sessions
-        const updated = [entry, ...parsed].slice(0, 10);
-        if (sessionKey) sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+        const updated = [entry, ...existing].slice(0, 10);
+        sessionStorage.setItem(sessionKey, JSON.stringify(updated));
+        sessionStorage.setItem(activeKey, "1");
         setSessionHistory(updated);
-      } catch (e) {
-        console.warn("Session history update failed:", e);
+      } else {
+        setSessionHistory(existing);
       }
-    })();
-
-  }, [user, token, showToast]);
+    } catch {
+      setSessionHistory([]);
+    }
+  }, [user?._id]);
 
   useEffect(() => {
-    if (user && token) {
-      showToast("User authenticated");
-    }
-  }, [user, token, showToast]);
+    if (isAdmin) setActiveTab("activity");
+  }, [isAdmin]);
 
-  if (!user){ 
-    return <div className="text-center py-24 text-white">Please login</div>;
-  }
-  const passwordStrength = () => {
-    if (newPassword.length < 6) return 30;
-    if (/[A-Z]/.test(newPassword) && /\d/.test(newPassword)) return 100;
-    return 60;
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setPageLoading(false);
+      return;
+    }
+    syncUserFields();
+    const loaders = isAdmin
+      ? [loadSessionHistory()]
+      : [loadWatchlist(), loadSessionHistory()];
+    Promise.all(loaders).finally(() => setPageLoading(false));
+  }, [user, authLoading, isAdmin, syncUserFields, loadWatchlist, loadSessionHistory]);
+
+  const savePrefs = (next) => {
+    setPrefs(next);
+    localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+    showToast("Preferences saved", "success");
   };
 
-  const handlePasswordChange = async e => {
+  const handleSaveUsername = async (e) => {
     e.preventDefault();
-    if (newPassword !== confirmPassword) return showToast("Passwords do not match", "error");
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: user.email, newPassword }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      showToast("Password updated. Please login again.", "success");
-      await logout();
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Password update failed", "error");
+    const trimmed = username.trim();
+    if (trimmed.length < 2) {
+      showToast("Username must be at least 2 characters", "warning");
+      return;
     }
-    setLoading(false);
+    if (trimmed === user.username) {
+      showToast("No changes to save", "info");
+      return;
+    }
+    setSavingUsername(true);
+    try {
+      const res = await updateUsername(trimmed);
+      updateUser({ username: res.username || trimmed });
+      showToast(res.message || "Username updated", "success");
+    } catch (err) {
+      showToast(err.message, "error");
+    } finally {
+      setSavingUsername(false);
+    }
   };
 
-  const handleUpdateUsername = async () => {
-    setUpdatingUsername(true);
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      showToast("New password must be at least 6 characters", "warning");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match", "error");
+      return;
+    }
+    setSavingPassword(true);
     try {
-      const newUsername = prompt("Enter new username:");
-      if (newUsername) {
-        const response = await updateUsername(newUsername);
-        alert(response.message);
-      }
+      const res = await changePassword(currentPassword, newPassword);
+      showToast(res.message || "Password updated", "success");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (err) {
-      console.error("UPDATE USERNAME ERROR:", err);
-      alert("Failed to update username");
+      showToast(err.message, "error");
     } finally {
-      setUpdatingUsername(false);
+      setSavingPassword(false);
     }
   };
 
   const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose an image file", "warning");
+      return;
+    }
 
-    // immediate preview (fast) while we compress/upload
-    const avatarPreview = URL.createObjectURL(file);
-    setAvatar(avatarPreview);
+    setUploadingAvatar(true);
+    const preview = URL.createObjectURL(file);
+    setAvatar(preview);
 
     try {
-      showToast("Compressing avatar...", "info");
-
-      const compressed = await compressImageFile(file, 800, 0.8);
-
-      // If still too large, try lower quality
-      const MAX_BYTES = 5 * 1024 * 1024; // match server limit
-      let finalFile = compressed;
-      if (finalFile.size > MAX_BYTES) {
-        showToast("Compressing at lower quality...", "info");
-        // try lower quality pass
-        finalFile = await compressImageFile(file, 800, 0.6);
+      let finalFile = await compressImageFile(file, 800, 0.8);
+      const MAX = 5 * 1024 * 1024;
+      if (finalFile.size > MAX) {
+        finalFile = await compressImageFile(file, 800, 0.5);
       }
-
-      if (finalFile.size > MAX_BYTES) {
-        throw new Error("Compressed image still exceeds 5MB limit. Choose a smaller image.");
+      if (finalFile.size > MAX) {
+        throw new Error("Image too large. Try a smaller file.");
       }
-
-      showToast("Uploading avatar...", "info");
       const res = await updateAvatarFile(finalFile);
-
-      if (res && res.avatar) {
+      if (res?.avatar) {
         setAvatar(res.avatar);
         updateUser({ avatar: res.avatar });
-        showToast("Avatar uploaded", "success");
-      } else {
-        showToast("Avatar uploaded (server did not return URL)", "warning");
       }
+      showToast("Profile photo updated", "success");
     } catch (err) {
-      console.error("Avatar upload error:", err);
-      showToast(err.message || "Avatar upload failed", "error");
+      setAvatar(user.avatar || null);
+      showToast(err.message || "Upload failed", "error");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Are you sure you want to delete your account? This is permanent.")) return;
     setDeleting(true);
     try {
-      const res = await deleteAccount();
-      if (res && res.message) showToast(res.message, "success");
-      else showToast("Account deleted", "success");
-      // after deletion, logout locally
-      await logout();
+      await deleteAccount();
+      showToast("Account deleted", "success");
+      setShowDeleteModal(false);
+      navigate("/");
     } catch (err) {
-      console.error("Delete account error:", err);
-      showToast(err?.message || "Failed to delete account", "error");
+      showToast(err.message || "Delete failed", "error");
     } finally {
       setDeleting(false);
     }
   };
+
+  if (authLoading || pageLoading) {
+    return <Loader visible message="Loading profile..." />;
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center gap-4 px-4">
+        <p className="text-gray-400">Please log in to view your profile.</p>
+        <Link
+          to="/login"
+          className="px-6 py-2.5 rounded-lg bg-[#01B4E4] text-black font-semibold"
+        >
+          Go to Login
+        </Link>
+      </div>
+    );
+  }
+
+  const avatarSrc =
+    avatar ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username || "User")}&background=01B4E4&color=000`;
+
+  const SidebarNav = ({ onNavigate }) => (
+    <div className="flex flex-col flex-1 gap-2">
+      {visibleTabs.map(({ key, label, icon: Icon }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => {
+            setActiveTab(key);
+            onNavigate?.();
+          }}
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-left ${
+            activeTab === key
+              ? "bg-[#01B4E4] text-black font-semibold"
+              : "text-gray-300 hover:bg-white/10"
+          }`}
+        >
+          <Icon size={18} /> {label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="bg-gradient-to-br mt-10 from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-4 py-10 flex justify-center">
       <Motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-6xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl text-white flex flex-col md:flex-row overflow-hidden"
+        className="w-full max-w-6xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl text-white flex flex-col md:flex-row overflow-hidden min-h-[640px]"
       >
-        {/* Sidebar for desktop */}
-        <div className="hidden md:flex w-60 bg-black/40 flex-col p-4 space-y-4">
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex w-64 bg-black/40 flex-col p-4">
           <div className="flex flex-col items-center py-6 border-b border-white/20">
-            <img
-              src={avatar || `https://ui-avatars.com/api/?name=${user.username || "User"}&background=01B4E4&color=000`}
-              className="w-24 h-24 rounded-full border-2 border-white/30 object-cover"
-            />
-            <label className="mt-2 flex gap-3 items-center px-2 rounded text-white font-bold cursor-pointer text-sm border-x">
-              <Upload size={14} /> Upload
-              <input type="file" hidden onChange={handleAvatarUpload} />
-            </label>
-            <h2 className="mt-2 font-bold text-lg">{user.username}</h2>
-            <p className="text-gray-400 text-sm">{user.email}</p>
+            <div className="relative">
+              <img
+                src={avatarSrc}
+                alt={user.username}
+                className="w-24 h-24 rounded-full border-2 border-white/30 object-cover"
+              />
+              {uploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center text-xs">
+                  ...
+                </div>
+              )}
+            </div>
+            {!isAdmin && (
+              <label className="mt-3 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 text-sm cursor-pointer hover:bg-white/10">
+                <Upload size={14} /> Change photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                />
+              </label>
+            )}
+            <h2 className="mt-3 font-bold text-lg">{user.username}</h2>
+            <p className="text-gray-400 text-sm text-center break-all">{user.email}</p>
+            <span
+              className={`mt-2 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                isAdmin
+                  ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                  : isPrime
+                    ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
+                    : "bg-white/10 text-gray-300 border-white/20"
+              }`}
+            >
+              {accountLabel}
+            </span>
           </div>
 
-          <div className="flex flex-col flex-1 gap-2">
-            {tabs.map(({ key, label, icon }) => {
-              const IconComp = icon;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setActiveTab(key)}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${
-                    activeTab === key
-                      ? "bg-[#01B4E4] text-black font-semibold"
-                      : "text-gray-300 hover:bg-white/10"
-                  }`}
-                >
-                  <IconComp size={18} /> {label}
-                </button>
-              );
-            })}
-          </div>
+          <SidebarNav />
 
-          <div className="flex flex-col gap-2 mt-auto">
+          <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-white/10">
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-black bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300"
+              >
+                <LayoutDashboard size={18} />
+                Admin Dashboard
+              </Link>
+            )}
+            <Link
+              to="/watchlist"
+              className="flex items-center gap-2 justify-center py-2 rounded-lg border border-white/15 text-gray-200 hover:bg-white/10 text-sm"
+            >
+              <BookmarkCheck size={16} /> My Watchlist
+            </Link>
             <button
+              type="button"
               onClick={logout}
-              className="flex items-center gap-2 text-gray-300 hover:text-red-500 text-lg border py-2 px-3 rounded-lg"
+              className="flex items-center gap-2 justify-center py-2 rounded-lg border border-white/15 text-gray-300 hover:text-red-400 hover:border-red-500/30"
             >
               <LogOut size={18} /> Logout
             </button>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="flex items-center gap-2 text-gray-300 hover:text-red-500 text-lg border py-2 px-3 rounded-lg"
-            >
-              <Trash2 size={18} /> Delete Account
-            </button>
+            {!isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(true)}
+                className="flex items-center gap-2 justify-center py-2 rounded-lg text-red-400 hover:bg-red-500/10 text-sm"
+              >
+                <Trash2 size={16} /> Delete account
+              </button>
+            )}
           </div>
-        </div>
+        </aside>
 
-        {/* Mobile Navbar */}
-        <div className="md:hidden flex justify-between items-center bg-black/40 p-3 sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <img
-              src={avatar || `https://ui-avatars.com/api/?name=${user.username || "User"}&background=01B4E4&color=000`}
-              className="w-10 h-10 rounded-full border-2 border-white/30 object-cover"
-            />
-            <h2 className="font-semibold">{user.username}</h2>
+        {/* Mobile header */}
+        <div className="md:hidden flex justify-between items-center bg-black/40 p-3 border-b border-white/10">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={avatarSrc} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{user.username}</p>
+              <p className="text-xs text-gray-400 truncate">{accountLabel}</p>
+            </div>
           </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu">
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -360,190 +447,323 @@ const Profile = () => {
         <AnimatePresence>
           {mobileMenuOpen && (
             <Motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="md:hidden bg-black/30 px-4 py-2 flex flex-col gap-2"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden bg-black/40 px-4 py-3 border-b border-white/10 overflow-hidden"
             >
-              {tabs.map(({ key, label, icon }) => {
-                const IconComp = icon;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setActiveTab(key);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors w-full ${
-                      activeTab === key
-                        ? "bg-[#01B4E4] text-black font-semibold"
-                        : "text-gray-300 hover:bg-white/10"
-                    }`}
+              <SidebarNav onNavigate={() => setMobileMenuOpen(false)} />
+              <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-white/10">
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 py-2 rounded-lg font-semibold text-black bg-amber-400"
                   >
-                    <IconComp size={16} /> {label}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                disabled={deleting}
-                className="flex border-t-2 border-gray-700 items-center gap-2 w-full py-2 text-red-400"
-              >
-                <Trash2 size={16} /> Delete Account
-              </button>
+                    <LayoutDashboard size={16} /> Admin Dashboard
+                  </Link>
+                )}
+                <Link
+                  to="/watchlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2 text-sm text-cyan-400"
+                >
+                  My Watchlist
+                </Link>
+                <button type="button" onClick={logout} className="py-2 text-red-400 text-sm">
+                  Logout
+                </button>
+              </div>
             </Motion.div>
           )}
         </AnimatePresence>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-6">
-          {/* PROFILE */}
-          {activeTab === "profile" && (
-            <>
+        {/* Main */}
+        <main className="flex-1 p-5 md:p-8 overflow-y-auto">
+          {isAdmin && (
+            <p className="text-sm text-gray-400 mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+              Personal details and security are managed in{" "}
+              <Link to="/admin/account" className="text-amber-300 hover:underline">
+                Admin Dashboard → My account
+              </Link>
+              .
+            </p>
+          )}
+
+          {!isAdmin && activeTab === "profile" && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold">Overview</h2>
+                <p className="text-gray-400 text-sm mt-1">Your CinemaHouse activity at a glance</p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-lg p-5 text-center bg-black/30 hover:bg-black/40 transition">
-                  <p className="text-gray-400">Watchlist Movies</p>
-                  <p className="text-4xl font-bold text-yellow-400">{movieCount}</p>
+                <div className="rounded-xl p-5 bg-black/30 border border-white/10 text-center">
+                  <p className="text-gray-400 text-sm">Watchlist Movies</p>
+                  <p className="text-4xl font-bold text-yellow-400 mt-1">{movieCount}</p>
                 </div>
-                <div className="rounded-lg p-5 text-center bg-black/30 hover:bg-black/40 transition">
-                  <p className="text-gray-400">Watchlist TV Shows</p>
-                  <p className="text-4xl font-bold text-blue-400">{tvCount}</p>
+                <div className="rounded-xl p-5 bg-black/30 border border-white/10 text-center">
+                  <p className="text-gray-400 text-sm">Watchlist TV</p>
+                  <p className="text-4xl font-bold text-blue-400 mt-1">{tvCount}</p>
                 </div>
-                <div className="rounded-lg p-5 text-center bg-black/30 hover:bg-black/40 transition">
-                  <p className="text-gray-400">Account Type</p>
-                  <p className="text-xl font-bold">Free</p>
+                <div className="rounded-xl p-5 bg-black/30 border border-white/10 text-center">
+                  <p className="text-gray-400 text-sm">Account</p>
+                  <p className={`text-xl font-bold mt-2 ${isAdmin ? "text-amber-400" : ""}`}>
+                    {accountLabel}
+                  </p>
                 </div>
               </div>
-              {/* Chart */}
-              <div className="mt-10 bg-black/30 p-6 rounded-xl max-w-md mx-auto">
-                <h3 className="text-center text-lg font-semibold mb-4">Watchlist Distribution</h3>
-                <Doughnut data={watchlistData} options={watchlistChartOptions} />
-              </div>
-            </>
+              {movieCount + tvCount > 0 ? (
+                <div className="bg-black/30 border border-white/10 p-6 rounded-xl max-w-sm mx-auto">
+                  <h3 className="text-center font-semibold mb-4">Watchlist split</h3>
+                  <Doughnut
+                    data={{
+                      labels: ["Movies", "TV Shows"],
+                      datasets: [
+                        {
+                          data: [movieCount, tvCount],
+                          backgroundColor: ["#FACC15", "#60A5FA"],
+                          borderWidth: 0,
+                        },
+                      ],
+                    }}
+                    options={{
+                      plugins: { legend: { labels: { color: "#fff" } } },
+                    }}
+                  />
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 text-sm">
+                  Add titles to your{" "}
+                  <Link to="/watchlist" className="text-cyan-400 hover:underline">
+                    watchlist
+                  </Link>{" "}
+                  to see stats here.
+                </p>
+              )}
+            </div>
           )}
 
-          {/* SECURITY */}
-          {activeTab === "security" && (
-            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
-              <h2 className="text-xl font-semibold">Change Password</h2>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="New password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="w-full bg-black/30 border border-white/20 rounded px-3 py-2"
-                  autoComplete="new-password"
-                />
+          {!isAdmin && activeTab === "security" && (
+            <div className="max-w-md space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold">Security</h2>
+                <p className="text-gray-400 text-sm mt-1">Update your password securely</p>
+              </div>
+              <form onSubmit={handlePasswordChange} className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-5">
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1">Current password</label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPw ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
+                      required
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-2.5 text-gray-400"
+                      onClick={() => setShowCurrentPw(!showCurrentPw)}
+                    >
+                      {showCurrentPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1">New password</label>
+                  <div className="relative">
+                    <input
+                      type={showNewPw ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-2.5 text-gray-400"
+                      onClick={() => setShowNewPw(!showNewPw)}
+                    >
+                      {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <div className="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
+                    <div
+                      className="h-full bg-[#01B4E4] transition-all"
+                      style={{ width: `${passwordStrength()}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Use 8+ chars with a number and capital letter for a strong password.</p>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1">Confirm new password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5"
+                    required
+                    autoComplete="new-password"
+                  />
+                </div>
                 <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400"
+                  type="submit"
+                  disabled={savingPassword}
+                  className="w-full py-2.5 rounded-lg bg-[#01B4E4] text-black font-semibold disabled:opacity-50"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {savingPassword ? "Updating..." : "Update password"}
                 </button>
-              </div>
-              <div className="h-2 bg-white/10 rounded">
-                <div
-                  className="h-full bg-[#01B4E4] rounded transition-all"
-                  style={{ width: `${passwordStrength()}%` }}
-                />
-              </div>
-              <input
-                type="password"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full bg-black/30 border border-white/20 rounded px-3 py-2"
-                autoComplete="new-password"
-              />
-              <button
-                disabled={loading}
-                className="w-full bg-[#01B4E4] text-black py-2 rounded font-semibold"
-              >
-                Update Password
-              </button>
-            </form>
+              </form>
+            </div>
           )}
 
-          {/* ACTIVITY */}
           {activeTab === "activity" && (
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold">Session History</h2>
-                      <p className="text-gray-400">Total sessions: <span className="font-semibold text-white">{sessionHistory.length}</span></p>
-                      {sessionHistory.length === 0 && (
-                        <div className="text-gray-400">No sessions recorded yet.</div>
-                      )}
-                      {sessionHistory.map(s => (
-                        <div
-                          key={s.id}
-                          className="flex flex-col sm:flex-row justify-between bg-black/30 px-4 py-3 rounded hover:bg-black/40 transition"
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">{s.date}</span>
-                            <span className="text-sm text-gray-400">Session ID: {s.id}</span>
-                          </div>
-                          <div className="text-gray-400 mt-2 sm:mt-0">IP: {s.ip}</div>
-                        </div>
-                      ))}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold">Activity</h2>
+                <p className="text-gray-400 text-sm mt-1">Recent login sessions on this account</p>
+              </div>
+              {sessionHistory.length === 0 ? (
+                <p className="text-gray-500 text-sm">No sessions recorded yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {sessionHistory.map((s, i) => (
+                    <li
+                      key={s.id}
+                      className="flex flex-wrap justify-between gap-2 bg-black/30 border border-white/10 rounded-lg px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">
+                          {i === 0 ? "Current session" : "Previous session"}
+                        </p>
+                        <p className="text-gray-400 text-xs">{s.date}</p>
+                      </div>
+                      <div className="text-right text-xs text-gray-400">
+                        <p>{s.device}</p>
+                        <p>IP: {s.ip}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 
-          {/* SETTINGS */}
-          {activeTab === "settings" && (
-            <div className="space-y-4 max-w-md">
-              <h2 className="text-xl font-semibold">Account Settings</h2>
-              <input
-                value={username}
-                onChange={e => setUsername(e.target.value)}
-                className="w-full bg-black/30 border border-white/20 rounded px-3 py-2"
-              />
-              <button
-                onClick={handleUpdateUsername}
-                disabled={updatingUsername}
-                className="w-full bg-[#01B4E4] text-black py-2 rounded font-semibold"
-              >
-                Update Username
-              </button>
+          {!isAdmin && activeTab === "settings" && (
+            <div className="max-w-lg space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold">Settings</h2>
+                <p className="text-gray-400 text-sm mt-1">Manage your account details</p>
+              </div>
+
+              <form onSubmit={handleSaveUsername} className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-5">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <User size={18} /> Profile details
+                </h3>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1">Username</label>
+                  <input
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    maxLength={30}
+                    className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-300 block mb-1 flex items-center gap-1">
+                    <Mail size={14} /> Email
+                  </label>
+                  <input
+                    value={user.email}
+                    disabled
+                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2.5 text-gray-500 cursor-not-allowed"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed here.</p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingUsername}
+                  className="w-full py-2.5 rounded-lg bg-[#01B4E4] text-black font-semibold disabled:opacity-50"
+                >
+                  {savingUsername ? "Saving..." : "Save username"}
+                </button>
+              </form>
+
+              <div className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-5">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Bell size={18} /> Preferences
+                </h3>
+                <label className="flex items-center justify-between gap-4 cursor-pointer">
+                  <span className="text-sm text-gray-300">Email me about new releases</span>
+                  <input
+                    type="checkbox"
+                    checked={prefs.emailUpdates}
+                    onChange={(e) =>
+                      savePrefs({ ...prefs, emailUpdates: e.target.checked })
+                    }
+                    className="w-5 h-5 accent-cyan-400"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-4 cursor-pointer">
+                  <span className="text-sm text-gray-300">Hide spoiler warnings</span>
+                  <input
+                    type="checkbox"
+                    checked={prefs.showSpoilers}
+                    onChange={(e) =>
+                      savePrefs({ ...prefs, showSpoilers: e.target.checked })
+                    }
+                    className="w-5 h-5 accent-cyan-400"
+                  />
+                </label>
+                <p className="text-xs text-gray-500">
+                  Preferences are saved on this device instantly.
+                </p>
+              </div>
+
+              <label className="md:hidden flex items-center justify-center gap-2 py-2 rounded-lg border border-white/15 cursor-pointer">
+                <Upload size={16} /> Upload profile photo
+                <input type="file" accept="image/*" hidden onChange={handleAvatarUpload} />
+              </label>
             </div>
           )}
-        </div>
+        </main>
 
-        {/* Delete Account Modal */}
         <AnimatePresence>
           {showDeleteModal && (
             <Motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <Motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className="bg-[#0D253F] rounded-2xl p-6 w-[90%] max-w-sm shadow-2xl border border-white/10"
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                className="bg-[#0D253F] rounded-2xl p-6 w-full max-w-sm border border-white/10"
               >
-                <h2 className="text-lg font-semibold text-red-400 mb-3 text-center">
-                  Delete Account
-                </h2>
-                <p className="text-gray-300 mb-6 text-center text-sm leading-relaxed">
-                  This action is <span className="text-red-400 font-semibold">permanent</span>.
-                  All your data, watchlist and profile information will be deleted forever.
+                <h2 className="text-lg font-semibold text-red-400 text-center">Delete account?</h2>
+                <p className="text-gray-300 text-sm text-center mt-3 mb-6">
+                  This permanently removes your account, watchlist, and reviews.
                 </p>
-                <div className="flex justify-center gap-4">
+                <div className="flex gap-3">
                   <button
+                    type="button"
                     onClick={() => setShowDeleteModal(false)}
                     disabled={deleting}
-                    className="px-5 py-2 rounded-lg text-gray-300 bg-white/10 hover:bg-white/20 transition"
+                    className="flex-1 py-2 rounded-lg bg-white/10 hover:bg-white/20"
                   >
                     Cancel
                   </button>
                   <button
+                    type="button"
                     onClick={handleDeleteAccount}
                     disabled={deleting}
-                    className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-60"
+                    className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50"
                   >
                     {deleting ? "Deleting..." : "Delete"}
                   </button>

@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import ErrorBoundary from "./component/ErrorBoundary";
+import ScrollToTop from "./component/ScrollToTop";
 import Home from "./pages/Home";
 import NavBar from "./component/NavBar";
 import Movies from "./pages/Movies";
@@ -15,18 +16,29 @@ import Profile from "./pages/Profile";
 import Watchlist from "./pages/Watchlist";
 import PersonDetails from "./pages/PersonDetails";
 import Footer from "./component/Footer";
-
+import AdminRoute from "./component/AdminRoute";
+import AdminLayout from "./component/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminMovies from "./pages/admin/AdminMovies";
+import AdminReviews from "./pages/admin/AdminReviews";
+import AdminHero from "./pages/admin/AdminHero";
+import AdminAccount from "./pages/admin/AdminAccount";
+import AdminGate from "./component/AdminGate";
 
 import "./App.css";
 
 
 function App() {
   return (
-    <BrowserRouter>
-      <NavBar />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <ScrollToTop />
+        <div className="flex flex-col min-h-screen">
+          <NavBar />
 
-      <Routes>
-  
+          <main className="flex-1">
+            <Routes>  
         <Route path="/" element={<Home />} />
         <Route path="/movies" element={<Movies />} />
         <Route path="/tv-shows" element={<TVShows />} />
@@ -43,11 +55,31 @@ function App() {
 
         <Route path="/profile" element={<Profile />} />
         <Route path="/watchlist" element={<Watchlist />} />
-      </Routes>
 
-      <Footer />
-    </BrowserRouter>
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminGate>
+                <AdminLayout />
+              </AdminGate>
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="movies" element={<AdminMovies />} />
+          <Route path="hero" element={<AdminHero />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="account" element={<AdminAccount />} />
+        </Route>
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
-
 export default App;

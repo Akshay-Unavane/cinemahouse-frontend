@@ -5,13 +5,13 @@ import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Search, Menu, X, User, Clock, Tv, Film, BookmarkCheck, User2, LogOut } from "lucide-react";
 import { BiCameraMovie, BiSolidMoviePlay } from "react-icons/bi";
 
+import { TMDB_BASE, TMDB_TOKEN } from "../config/tmdb";
+
 const navLinks = [
-  { path: "/movies", label: " Movies", icon: <BiSolidMoviePlay size={18}/> },
+  { path: "/movies", label: "Movies", icon: <BiSolidMoviePlay size={18}/> },
   { path: "/tv-shows", label: "TV Shows", icon: <Tv size={18}/> },
   { path: "/watchlist", label: "Watchlist", icon: <BookmarkCheck size={18}/> },
 ];
-
-const TMDB_TOKEN = import.meta.env.VITE_API_TOKEN;
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -20,6 +20,7 @@ const Navbar = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ const Navbar = () => {
     setRecentSearches(updated);
     localStorage.setItem("recentSearches", JSON.stringify(updated));
   };
+
+  /* ---------------- SCROLL EFFECT ---------------- */
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   /* ---------------- CLOSE MENUS ON ROUTE CHANGE ---------------- */
   useEffect(() => {
@@ -81,7 +90,7 @@ const Navbar = () => {
     const fetchSearch = async () => {
       try {
         const res = await fetch(
-          `https://api.themoviedb.org/3/search/multi?query=${encodeURIComponent(
+          `${TMDB_BASE}/search/multi?query=${encodeURIComponent(
             query
           )}&include_adult=false`,
           {
@@ -140,15 +149,21 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-[#0D253F]/80 backdrop-blur border-b border-white/10">
+    <nav
+      className={`fixed top-0 left-0 w-full z-50 border-b transition-all duration-300 ${
+        scrolled
+          ? "bg-[#0D253F]/95 backdrop-blur-md border-white/15 shadow-lg shadow-black/20"
+          : "bg-[#0D253F]/70 backdrop-blur border-white/10"
+      }`}
+    >
       {/* MAIN BAR */}
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-white tracking-wide">
+        <Link to="/" className="flex items-center gap-2 group">
+          <span className="text-2xl font-bold text-white tracking-wide group-hover:text-glow transition">
             CinemaHouse
           </span>
-          <BiCameraMovie size={28} className="text-[#01B4E4]" />
+          <BiCameraMovie size={28} className="text-[#01B4E4] group-hover:scale-110 transition-transform" />
         </Link>
 
         {/* DESKTOP LINKS */}
@@ -159,13 +174,16 @@ const Navbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-semibold transition flex items-center gap-2 ${
+                className={`text-sm font-semibold transition flex items-center gap-2 relative pb-1 ${
                   location.pathname === link.path
                     ? "text-[#01B4E4]"
                     : "text-gray-300 hover:text-white"
                 }`}
               >
                 {link.icon} {link.label}
+                {location.pathname === link.path && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#01B4E4] rounded-full" />
+                )}
               </Link>
             ))}
         </div>
@@ -182,14 +200,16 @@ const Navbar = () => {
             <Search size={20} />
           </button>
 
-         {user ? (
+  {user ? (
   <>
-    {/* Profile Link with Icon */}
     <Link
       to="/profile"
-      className="hidden md:flex items-center gap-2 text-sm text-gray-300 font-medium uppercase hover:text-white transition"
+      className="hidden md:flex items-center gap-2 text-sm text-gray-300 font-medium hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-white/5"
     >
-      <User2 size={18} /> Hi, {user.username || user.email}
+      <span className="w-7 h-7 rounded-full bg-[#01B4E4]/20 border border-[#01B4E4]/40 flex items-center justify-center">
+        <User2 size={14} className="text-[#01B4E4]" />
+      </span>
+      {user.username || user.email}
     </Link>
 
     {/* Logout Button */}
@@ -352,7 +372,7 @@ const Navbar = () => {
 <AnimatePresence>
   {showLogoutModal && (
     <Motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm pt-96"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

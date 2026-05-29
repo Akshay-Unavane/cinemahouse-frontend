@@ -1,16 +1,30 @@
 /* @refresh reset */
-import {  useEffect, useState } from "react";
-import { saveToken, getToken, logout as logoutService } from "../service/auth.js";
+import { useEffect, useState } from "react";
+import {
+  saveToken,
+  getToken,
+  logoutSession,
+  fetchCurrentUser,
+} from "../service/auth.js";
 import { getWatchlist } from "../service/watchlist";
 import { AuthContext } from "./contexts";
 
-import jwtDecode from "jwt-decode";
+async function loadUserWithWatchlist() {
+  const baseUser = await fetchCurrentUser();
+  try {
+    const wl = await getWatchlist();
+    return { ...baseUser, watchlist: wl };
+  } catch (err) {
+    console.warn("Could not fetch watchlist:", err?.message || err);
+    return { ...baseUser, watchlist: [] };
+  }
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  /* Load user from token on refresh */
+  /* Load user from server on refresh (role always from DB) */
   useEffect(() => {
     const token = getToken();
 
@@ -21,30 +35,11 @@ export const AuthProvider = ({ children }) => {
 
     (async () => {
       try {
-        const decoded = jwtDecode(token);
-
-        // Token expiry check
-        if (decoded.exp * 1000 < Date.now()) {
-          logoutService();
-          setUser(null);
-        } else {
-          const baseUser = {
-            _id: decoded.userId || decoded.sub,
-            username: decoded.username || decoded.name || "",
-            email: decoded.email || "",
-          };
-
-          try {
-            const wl = await getWatchlist();
-            setUser({ ...baseUser, watchlist: wl });
-          } catch (err) {
-            console.warn('Could not fetch watchlist on init:', err?.message || err);
-            setUser({ ...baseUser, watchlist: [] });
-          }
-        }
+        const fullUser = await loadUserWithWatchlist();
+        setUser(fullUser);
       } catch (error) {
-        console.error("Invalid token:", error);
-        logoutService();
+        console.error("Session restore failed:", error);
+        await logoutSession();
         setUser(null);
       } finally {
         setLoading(false);
@@ -52,27 +47,22 @@ export const AuthProvider = ({ children }) => {
     })();
   }, []);
 
-  /* LOGIN */
+  /* LOGIN — token saved, then refresh user + role from /auth/me */
   const login = (token) => {
     saveToken(token);
 
-    const decoded = jwtDecode(token);
-
-    const baseUser = {
-      _id: decoded.userId || decoded.sub,
-      username: decoded.username || decoded.name || "",
-      email: decoded.email || "",
-    };
-
-    // fetch watchlist asynchronously, set empty list on failure
-    getWatchlist()
-      .then((wl) => setUser({ ...baseUser, watchlist: wl }))
-      .catch(() => setUser({ ...baseUser, watchlist: [] }));
+    loadUserWithWatchlist()
+      .then(setUser)
+      .catch((err) => {
+        console.error("Login session setup failed:", err);
+        logoutSession();
+        setUser(null);
+      });
   };
 
   /* LOGOUT */
-  const logout = () => {
-    logoutService();
+  const logout = async () => {
+    await logoutSession();
     setUser(null);
   };
 
@@ -87,7 +77,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-
 
 /* Note: `useAuth` moved to a separate module to avoid fast-refresh export issues. */

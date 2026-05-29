@@ -11,6 +11,7 @@ import "swiper/css/pagination";
 
 import { trackInteraction } from "../utils/aiTracker";
 import { rankByAI } from "../utils/aiRecommandtion";
+import { getHeroSlides, mapHeroSlideToTmdb } from "../service/hero";
 import Loader from "./Loader";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -29,6 +30,12 @@ const HeroSection = () => {
     const fetchHeroData = async () => {
       try {
         setLoading(true);
+
+        const adminSlides = await getHeroSlides();
+        if (adminSlides.length > 0) {
+          setSlides(adminSlides.map(mapHeroSlideToTmdb));
+          return;
+        }
 
         const urls = [
           `${API_BASE}/trending/all/week`,
@@ -112,7 +119,7 @@ const HeroSection = () => {
                 >
                   <div className="max-w-xl lg:max-w-2xl text-white space-y-4">
                     <span className="text-xs uppercase tracking-widest text-[#01B4E4]">
-                      Recommended For You
+                      Featured on CinemaHouse
                     </span>
 
                     <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">

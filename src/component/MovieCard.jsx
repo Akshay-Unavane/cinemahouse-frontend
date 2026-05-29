@@ -118,7 +118,7 @@ function MovieCard({ movie }) {
     <Motion.div
       whileHover={{ scale: 1.06 }}
       transition={{ type: "spring", stiffness: 260, damping: 20 }}
-      className="relative cursor-pointer rounded-xl bg-zinc-900 shadow-xl overflow-visible"
+      className="relative cursor-pointer rounded-xl bg-zinc-900 shadow-xl overflow-visible group ring-1 ring-white/5 hover:ring-[#01B4E4]/30 transition-all"
       onClick={handleNavigate}
     >
       {/* POSTER */}
@@ -130,8 +130,10 @@ function MovieCard({ movie }) {
         className="w-full aspect-[2/3] object-cover rounded-xl"
       />
 
-      {/* HOVER GRADIENT */}
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+      {/* HOVER GRADIENT + TITLE */}
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+        <p className="text-sm font-semibold line-clamp-2 text-white drop-shadow-lg">{title}</p>
+      </div>
 
       {/* RATING */}
       <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/80 text-yellow-400 text-xs px-2 py-1 rounded-md font-semibold">

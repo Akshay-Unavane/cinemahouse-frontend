@@ -2,12 +2,10 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import HeroSection from "../component/HeroSection";
+import { TMDB_BASE, TMDB_API_KEY, isTmdbConfigured } from "../config/tmdb";
 import MovieCard from "../component/MovieCard";
 import Loader from "../component/Loader";
 import { SkipBack, SkipForward } from "lucide-react";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
 const OPTIONS = {
   trending_day: "Trending Today",
@@ -36,7 +34,7 @@ const Home = () => {
 
   // ✅ ADD: stable fetch function
   const fetchData = useCallback(async () => {
-    if (!API_BASE || !API_KEY) {
+    if (!isTmdbConfigured()) {
       console.error("TMDB ENV variables missing");
       return;
     }
@@ -47,10 +45,10 @@ const Home = () => {
       setLoading(true);
 
       const { data } = await axios.get(
-        `${API_BASE}${endpoints[category]}`,
+        `${TMDB_BASE}${endpoints[category]}`,
         {
           params: {
-            api_key: API_KEY,
+            api_key: TMDB_API_KEY,
             page,
           },
         }
@@ -109,9 +107,9 @@ const Home = () => {
 
       <main ref={contentRef} className="px-4 pb-24">
         {/* FILTER BAR */}
-        <div className="sticky top-0 rounded-lg z-30 bg-black/80 backdrop-blur-lg border border-white/30 mb-8">
-          <div className="max-w-7xl mx-auto py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h2 className="text-xl md:text-2xl font-extrabold">
+        <div className="sticky top-16 z-30 glass-panel mb-8 max-w-7xl mx-auto">
+          <div className="py-4 px-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 className="section-title text-xl md:text-2xl text-glow">
               {OPTIONS[category]}
             </h2>
 

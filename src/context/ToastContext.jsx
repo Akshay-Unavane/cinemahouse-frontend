@@ -33,7 +33,15 @@ export function ToastProvider({ children }) {
       {children}
       {toast && (
         <div
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded shadow-lg text-white font-semibold flex items-center gap-3 max-w-xl w-full sm:w-auto`}
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-4 py-3 rounded-xl shadow-2xl text-white font-medium flex items-center gap-3 max-w-xl w-[calc(100%-2rem)] sm:w-auto border backdrop-blur-md ${
+            toast.type === "success"
+              ? "bg-green-900/90 border-green-500/30"
+              : toast.type === "error"
+                ? "bg-red-900/90 border-red-500/30"
+                : toast.type === "warning"
+                  ? "bg-yellow-900/90 border-yellow-500/30"
+                  : "bg-sky-900/90 border-sky-500/30"
+          }`}
         >
           <div className={`p-2 rounded-full flex items-center justify-center ${
             toast.type === 'success' ? 'bg-green-700' : toast.type === 'error' ? 'bg-red-700' : toast.type === 'warning' ? 'bg-yellow-600' : 'bg-sky-600'

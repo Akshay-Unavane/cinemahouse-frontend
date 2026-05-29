@@ -3,6 +3,7 @@ import { useState as useReactState } from "react";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 import { addToWatchlist } from "../service/watchlist";
+import ReviewSection from "../component/ReviewSection";
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -338,6 +339,15 @@ const TvShowDetails = () => {
             </div>
           ) : null}
         </div>
+
+        <ReviewSection
+          tmdbId={show.id}
+          mediaType="tv"
+          title={show.name}
+          poster_path={show.poster_path}
+          overview={show.overview}
+          release_date={show.first_air_date}
+        />
 
         {/* CAST */}
         {show.credits?.cast?.length > 0 && (

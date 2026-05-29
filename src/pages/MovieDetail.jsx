@@ -13,6 +13,7 @@ import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
 import { addToWatchlist } from "../service/watchlist";
 import CastCard from "../component/CastCard";
+import ReviewSection from "../component/ReviewSection";
 
 const API_BASE = "https://api.themoviedb.org/3/movie";
 const API_KEY = import.meta.env.VITE_API_TOKEN;
@@ -261,6 +262,15 @@ function MovieDetail() {
             </div>
           </div>
         )}
+
+        <ReviewSection
+          tmdbId={movie.id}
+          mediaType="movie"
+          title={movie.title}
+          poster_path={movie.poster_path}
+          overview={movie.overview}
+          release_date={movie.release_date}
+        />
 
         {/* TRAILER */}
         {trailer && (

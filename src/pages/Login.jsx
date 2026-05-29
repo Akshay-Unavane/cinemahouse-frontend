@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, AlertTriangle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertTriangle, Clapperboard } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { useAuth } from "../context/useAuth";
 import { useToast } from "../context/useToast";
@@ -52,8 +52,9 @@ const Login = () => {
       showToast("Login successful!", "success");
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Invalid credentials");
-      showToast(err.message || "Invalid credentials", "error");
+      const message = err.message || "Invalid credentials";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
@@ -72,10 +73,13 @@ const Login = () => {
         transition={{ duration: 0.4 }}
         className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-[0_25px_80px_rgba(0,0,0,0.7)]"
       >
-        <h1 className="text-3xl font-extrabold text-center mb-2">
-          🎬 Welcome Back
-        </h1>
-        <p className="text-center text-gray-400 mb-6 text-sm">
+        <div className="flex flex-col items-center mb-6">
+          <div className="p-3 rounded-2xl bg-[#01B4E4]/10 border border-[#01B4E4]/30 mb-3">
+            <Clapperboard className="text-[#01B4E4]" size={32} />
+          </div>
+          <h1 className="text-3xl font-extrabold text-center">Welcome Back</h1>
+        </div>
+        <p className="text-center text-gray-400 mb-6 text-sm -mt-2">
           Login to continue exploring movies & TV shows
         </p>
 
