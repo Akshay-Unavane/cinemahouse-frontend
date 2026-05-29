@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, AlertTriangle, Clapperboard } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { useAuth } from "../context/useAuth";
@@ -11,6 +11,8 @@ const Login = () => {
   const { login } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || "/";
 
   const [form, setForm] = useState({
     email: localStorage.getItem("rememberEmail") || "",
@@ -50,7 +52,7 @@ const Login = () => {
       }
 
       showToast("Login successful!", "success");
-      navigate("/", { replace: true });
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       const message = err.message || "Invalid credentials";
       setError(message);
@@ -176,8 +178,8 @@ const Login = () => {
           </p>
           <p>
             Forgot password?{" "}
-            <Link to="/reset-password" className="text-cyan-400 hover:underline">
-              Reset here
+            <Link to="/forgot-password" className="text-cyan-400 hover:underline">
+              Reset with code
             </Link>
           </p>
         </div>

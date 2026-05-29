@@ -15,6 +15,7 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -47,10 +48,15 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { username, email, password } = form;
+    const { username, email, password, confirmPassword } = form;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !confirmPassword) {
       showToast("All fields are required", "warning");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showToast("Passwords do not match", "warning");
       return;
     }
 
@@ -72,7 +78,7 @@ const Register = () => {
         showToast("Account created successfully", "success");
         setTimeout(() => navigate("/login"), 1200);
       }
-      setForm({ username: "", email: "", password: "" });
+      setForm({ username: "", email: "", password: "", confirmPassword: "" });
     } catch (err) {
       showToast(
         err.response?.data?.message || err.message || "Registration failed",
@@ -175,6 +181,16 @@ const Register = () => {
               </p>
             </div>
           </div>
+
+          <Input
+            label="Confirm password"
+            icon={<Lock size={18} />}
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            value={form.confirmPassword}
+            onChange={handleChange}
+            placeholder="Repeat password"
+          />
 
           {/* SUBMIT */}
           <Motion.button

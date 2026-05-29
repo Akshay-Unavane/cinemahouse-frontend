@@ -2,10 +2,38 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "../context/useAuth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion as Motion, AnimatePresence } from "framer-motion";
-import { Search, Menu, X, User, Clock, Tv, Film, BookmarkCheck, User2, LogOut } from "lucide-react";
+import { Search, Menu, X, User, Clock, Tv, Film, BookmarkCheck, LogOut } from "lucide-react";
 import { BiCameraMovie, BiSolidMoviePlay } from "react-icons/bi";
 
 import { TMDB_BASE, TMDB_TOKEN } from "../config/tmdb";
+
+function getUserAvatarSrc(user) {
+  if (!user) return "";
+  if (user.avatar) return user.avatar;
+  const isAdmin = (user.role || "").toLowerCase() === "admin";
+  const name = encodeURIComponent(user.username || user.email || "User");
+  const bg = isAdmin ? "f59e0b" : "01B4E4";
+  return `https://ui-avatars.com/api/?name=${name}&background=${bg}&color=000`;
+}
+
+function NavUserAvatar({ user, size = "md" }) {
+  const isAdmin = (user?.role || "").toLowerCase() === "admin";
+  const sizeClass = size === "sm" ? "w-8 h-8" : "w-9 h-9";
+  const fallback = getUserAvatarSrc(user);
+
+  return (
+    <img
+      src={user?.avatar || fallback}
+      alt={user?.username || "Profile"}
+      onError={(e) => {
+        if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
+      }}
+      className={`${sizeClass} rounded-full object-cover shrink-0 border-2 ${
+        isAdmin ? "border-amber-400/70" : "border-[#01B4E4]/70"
+      }`}
+    />
+  );
+}
 
 const navLinks = [
   { path: "/movies", label: "Movies", icon: <BiSolidMoviePlay size={18}/> },
@@ -26,6 +54,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const { user, logout } = useAuth();
+  const isAdmin = (user?.role || "").toLowerCase() === "admin";
 
   /* ---------------- RECENT SEARCH DELETE ---------------- */
   const removeRecentSearch = (text) => {
@@ -203,13 +232,22 @@ const Navbar = () => {
   {user ? (
   <>
     <Link
-      to="/profile"
-      className="hidden md:flex items-center gap-2 text-sm text-gray-300 font-medium hover:text-white transition px-3 py-1.5 rounded-lg hover:bg-white/5"
+      to={isAdmin ? "/admin/account" : "/profile"}
+      className="hidden md:flex items-center gap-2.5 text-sm text-gray-300 font-medium hover:text-white transition px-2 py-1.5 rounded-lg hover:bg-white/5 max-w-[200px]"
     >
-      <span className="w-7 h-7 rounded-full bg-[#01B4E4]/20 border border-[#01B4E4]/40 flex items-center justify-center">
-        <User2 size={14} className="text-[#01B4E4]" />
+      <NavUserAvatar user={user} />
+      <span className="truncate">{user.username || user.email}</span>
+    </Link>
+
+    <Link
+      to={isAdmin ? "/admin/account" : "/profile"}
+      className="md:hidden flex items-center gap-2 min-w-0 max-w-[140px] rounded-lg hover:bg-white/5 px-1 py-1"
+      aria-label="Profile"
+    >
+      <NavUserAvatar user={user} size="sm" />
+      <span className="text-xs font-medium text-gray-300 truncate">
+        {user.username || user.email}
       </span>
-      {user.username || user.email}
     </Link>
 
     {/* Logout Button */}
@@ -273,10 +311,12 @@ const Navbar = () => {
                 {user ? (
                   <>
                     <Link
-                      to="/profile"
-                      className=" text-sm text-gray-400 mb-2 uppercase flex items-center gap-2"
+                      to={isAdmin ? "/admin/account" : "/profile"}
+                      onClick={() => setMobileOpen(false)}
+                      className="text-sm text-gray-300 mb-2 flex items-center gap-2.5 py-1"
                     >
-                    <User2 size={18}/>  Hi, {user.username || user.email}
+                      <NavUserAvatar user={user} size="sm" />
+                      <span className="truncate">{user.username || user.email}</span>
                     </Link>
                     <button
                       onClick={() => {

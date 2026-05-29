@@ -172,6 +172,31 @@ export async function deleteAccount() {
 /* =========================
    RESET PASSWORD
 ========================= */
+export async function forgotPassword(email) {
+  try {
+    const { data } = await api.post("/auth/forgot-password", {
+      email: email.trim().toLowerCase(),
+    });
+    return data;
+  } catch (err) {
+    throw new Error(getApiError(err, "Could not send reset code"));
+  }
+}
+
+export async function verifyResetPassword(email, otp, newPassword) {
+  try {
+    const { data } = await api.post("/auth/verify-reset-password", {
+      email: email.trim().toLowerCase(),
+      otp: String(otp).trim(),
+      newPassword,
+    });
+    return data;
+  } catch (err) {
+    throw new Error(getApiError(err, "Password reset failed"));
+  }
+}
+
+/* @deprecated use forgotPassword + verifyResetPassword */
 export async function resetPassword(email, newPassword) {
   try {
     const { data } = await api.post("/auth/reset-password", { email, newPassword });
