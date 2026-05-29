@@ -345,7 +345,7 @@ const Profile = () => {
   );
 
   return (
-    <div className="bg-gradient-to-br mt-10 from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-4 py-10 flex justify-center">
+    <div className="bg-gradient-to-br from-[#020024] via-[#111] to-[#0D253F] min-h-screen px-3 sm:px-4 py-6 sm:py-10 flex justify-center">
       <Motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

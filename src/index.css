@@ -38,11 +38,22 @@
   }
 
   .page-container {
-    @apply container mx-auto px-4 pt-24 pb-12;
+    @apply container mx-auto px-4 pt-20 sm:pt-24 pb-12;
+  }
+
+  .nav-spacer {
+    @apply h-14 sm:h-16;
   }
 }
 
 @layer utilities {
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;

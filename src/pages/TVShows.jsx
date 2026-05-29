@@ -131,7 +131,7 @@ function TVShows() {
       <Loader visible={loading} message="Loading TV Shows..." />
 
       {/* ✅ SAFE BACK BUTTON (NO OVERLAP EVER) */}
-      <div className="sticky top-[72px] md:top-[96px] z-10 w-fit">
+      <div className="sticky top-14 sm:top-16 z-10 w-fit">
         <button
           onClick={() => navigate(-1)}
           className="
@@ -152,12 +152,12 @@ function TVShows() {
       </div>
 
       {/* PAGE TITLE */}
-      <h1 className="text-3xl md:text-4xl font-extrabold text-white text-center mt-10 mb-6">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center mb-6 pt-2">
         TV Shows
       </h1>
 
       {/* SEARCH & FILTER BAR */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md py-5 mb-8">
+      <div className="sticky top-14 sm:top-16 z-40 bg-black/80 backdrop-blur-md py-4 sm:py-5 mb-6 sm:mb-8">
         <div ref={searchRef} className="relative max-w-xl mx-auto">
           <Search className="absolute left-4 top-3.5 text-gray-400" size={18} />
           <input

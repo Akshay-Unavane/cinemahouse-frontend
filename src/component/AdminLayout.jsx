@@ -24,7 +24,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#020617] to-black text-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 mt-10 border border-white/10 bg-white/[0.03] rounded-xl px-6 py-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 border border-white/10 bg-white/[0.03] rounded-xl px-4 sm:px-6 py-4">
           <div>
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-emerald-400" />

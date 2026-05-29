@@ -142,7 +142,7 @@ function Movies() {
       <Loader visible={loading} message="Loading Movies..." />
 
       {/* BACK BUTTON */}
-      <div className="sticky top-[72px] md:top-[96px] z-10 w-fit">
+      <div className="sticky top-14 sm:top-16 z-10 w-fit">
         <button
           onClick={() => navigate(-1)}
           className="mt-4 flex items-center gap-2 px-4 py-2 bg-black/70 rounded-lg text-white border border-white/10 hover:bg-black/90"
@@ -153,12 +153,12 @@ function Movies() {
       </div>
 
       {/* TITLE */}
-      <h1 className="text-3xl md:text-4xl font-extrabold text-white text-center mt-12 mb-8">
+      <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center mt-4 sm:mt-8 mb-6 sm:mb-8">
         Movies 🎬
       </h1>
 
       {/* SEARCH & FILTER BAR */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-md py-5 mb-8">
+      <div className="sticky top-14 sm:top-16 z-40 bg-black/80 backdrop-blur-md py-4 sm:py-5 mb-6 sm:mb-8">
         <div ref={searchRef} className="relative max-w-xl mx-auto">
           <Search className="absolute left-4 top-3.5 text-gray-400" size={18} />
           <input

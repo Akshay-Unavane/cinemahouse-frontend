@@ -107,7 +107,7 @@ const Home = () => {
 
       <main ref={contentRef} className="px-4 pb-24">
         {/* FILTER BAR */}
-        <div className="sticky top-16 z-30 glass-panel mb-8 max-w-7xl mx-auto">
+        <div className="sticky top-14 sm:top-16 z-30 glass-panel mb-8 max-w-7xl mx-auto">
           <div className="py-4 px-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 className="section-title text-xl md:text-2xl text-glow">
               {OPTIONS[category]}

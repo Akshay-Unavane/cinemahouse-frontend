@@ -136,7 +136,7 @@ const Watchlist = () => {
   }
 
   return (
-    <div className="min-h-screen mt-10 bg-black text-white px-4 py-10">
+    <div className="min-h-screen bg-black text-white px-3 sm:px-4 py-6 sm:py-10">
       {/* Back */}
       <div className="sticky top-[72px] z-10 w-fit mb-6">
         <button

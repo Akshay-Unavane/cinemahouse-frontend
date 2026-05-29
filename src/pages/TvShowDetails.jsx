@@ -164,7 +164,7 @@ const TvShowDetails = () => {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="fixed top-20 md:top-24 left-4 z-40 flex items-center gap-2 px-4 py-2 glass-panel hover:bg-white/10 text-sm"
+        className="fixed top-16 sm:top-20 left-3 sm:left-4 z-40 flex items-center gap-2 px-3 sm:px-4 py-2 glass-panel hover:bg-white/10 text-sm"
       >
         <ChevronLeft size={18} /> Back
       </button>

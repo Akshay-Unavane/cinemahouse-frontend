@@ -66,20 +66,11 @@ const Browse = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 lg:px-10 pt-28 pb-12">
-      {/* BACK BUTTON */}
+    <div className="min-h-screen bg-black text-white px-3 sm:px-6 lg:px-10 pt-4 sm:pt-6 pb-12">
       <button
+        type="button"
         onClick={() => navigate(-1)}
-        className="
-          fixed top-20 left-4 z-40
-          flex items-center gap-1
-          px-4 py-2
-          bg-black/60 backdrop-blur-xl
-          border border-white/10
-          rounded-xl
-          hover:bg-black/90
-          transition
-        "
+        className="fixed top-16 sm:top-20 left-3 sm:left-4 z-40 flex items-center gap-1 px-3 sm:px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl hover:bg-black/90 transition text-sm"
       >
         <ChevronLeft size={18} />
         Back
