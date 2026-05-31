@@ -81,7 +81,9 @@ api.interceptors.request.use((config) => {
 
 function getApiError(err, fallback = "Request failed") {
   const msg = err.response?.data?.message;
+  const emailError = err.response?.data?.emailError;
   const hint = err.response?.data?.hint;
+  if (emailError) return emailError;
   if (msg && hint) return `${msg} ${hint}`;
   return msg || err.message || fallback;
 }

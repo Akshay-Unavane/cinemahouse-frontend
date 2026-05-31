@@ -27,26 +27,7 @@ const ForgotPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [devOtp, setDevOtp] = useState("");
-  const [emailPreviewUrl, setEmailPreviewUrl] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-
-  const applyOtpResponse = (res) => {
-    setDevOtp(res.devOtp || "");
-    setEmailPreviewUrl(res.emailPreviewUrl || "");
-    setResendCooldown(60);
-    setStep(2);
-
-    if (res.emailSent && res.emailPreviewUrl) {
-      showToast("Open the test email link below for your code", "success");
-    } else if (res.emailSent) {
-      showToast("Check your email for the reset code", "success");
-    } else if (res.devOtp) {
-      showToast("Email not configured — use the code shown below", "info");
-    } else {
-      showToast(res.message || "Could not send reset code", "error");
-    }
-  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -71,7 +52,14 @@ const ForgotPassword = () => {
     setError("");
     try {
       const res = await forgotPassword(email);
-      applyOtpResponse(res);
+      if (!res.emailSent) {
+        setError(res.message || "Email could not be sent");
+        showToast(res.message || "Email could not be sent", "error");
+        return;
+      }
+      setResendCooldown(60);
+      setStep(2);
+      showToast("Check your email for the 6-digit code", "success");
     } catch (err) {
       setError(err.message);
       showToast(err.message, "error");
@@ -86,8 +74,15 @@ const ForgotPassword = () => {
     setError("");
     try {
       const res = await forgotPassword(email);
-      applyOtpResponse(res);
+      if (!res.emailSent) {
+        setError(res.message || "Could not resend code");
+        showToast(res.message || "Could not resend code", "error");
+        return;
+      }
+      setResendCooldown(60);
+      showToast("New code sent to your email", "success");
     } catch (err) {
+      setError(err.message);
       showToast(err.message, "error");
     } finally {
       setLoading(false);
@@ -97,7 +92,7 @@ const ForgotPassword = () => {
   const handleReset = async (e) => {
     e.preventDefault();
     if (otp.trim().length !== 6) {
-      setError("Enter the 6-digit reset code");
+      setError("Enter the 6-digit reset code from your email");
       return;
     }
     if (newPassword.length < 6) {
@@ -144,21 +139,20 @@ const ForgotPassword = () => {
           </h1>
           <p className="text-gray-400 text-sm text-center mt-2">
             {step === 1
-              ? "Enter your email and we'll send a 6-digit reset code."
-              : `Enter the code sent to ${email}`}
+              ? "We'll email a 6-digit code to your registered address."
+              : `Enter the code we sent to ${email}`}
           </p>
         </div>
 
-        {/* Step indicator */}
         <div className="flex items-center gap-2 mb-6">
           <div className={`flex-1 h-1 rounded-full ${step >= 1 ? "bg-[#01B4E4]" : "bg-white/10"}`} />
           <div className={`flex-1 h-1 rounded-full ${step >= 2 ? "bg-[#01B4E4]" : "bg-white/10"}`} />
         </div>
 
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2 text-red-400 text-sm">
-            <AlertTriangle size={16} />
-            {error}
+          <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-red-400 text-sm">
+            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -183,45 +177,17 @@ const ForgotPassword = () => {
               </div>
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full">
-              Send reset code
+              Send reset code to email
             </button>
           </form>
         ) : (
           <form onSubmit={handleReset} className="space-y-4">
-            {emailPreviewUrl && (
-              <div className="rounded-lg bg-cyan-500/10 border border-cyan-500/30 px-4 py-3 text-sm">
-                <p className="text-cyan-200 mb-2">
-                  Local test email sent. Click to open the inbox preview:
-                </p>
-                <a
-                  href={emailPreviewUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#01B4E4] font-semibold underline break-all"
-                >
-                  Open test email
-                </a>
-              </div>
-            )}
-
-            {devOtp && (
-              <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 px-4 py-3 text-sm text-amber-200">
-                <strong>Fallback code:</strong>{" "}
-                <span className="font-mono font-bold tracking-widest text-lg">{devOtp}</span>
-                <p className="text-xs text-amber-300/80 mt-1">
-                  Use this if email is not set up yet (also printed in backend terminal).
-                </p>
-              </div>
-            )}
-
-            {!devOtp && !emailPreviewUrl && (
-              <p className="text-sm text-gray-400 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
-                Enter the 6-digit code from your email. Codes expire in 15 minutes.
-              </p>
-            )}
+            <p className="text-sm text-gray-400 bg-white/5 border border-white/10 rounded-lg px-4 py-3">
+              Check your inbox and spam folder. The code expires in 15 minutes.
+            </p>
 
             <div>
-              <label className="text-sm text-gray-300 block mb-1">6-digit code</label>
+              <label className="text-sm text-gray-300 block mb-1">6-digit code from email</label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400" size={18} />
                 <input
@@ -245,7 +211,7 @@ const ForgotPassword = () => {
                 disabled={resendCooldown > 0 || loading}
                 className="text-xs text-cyan-400 hover:underline mt-2 disabled:text-gray-500 disabled:no-underline"
               >
-                {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend code"}
+                {resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend code to email"}
               </button>
             </div>
 
