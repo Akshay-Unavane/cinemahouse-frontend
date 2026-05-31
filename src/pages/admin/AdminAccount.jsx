@@ -7,16 +7,14 @@ import {
   Shield,
   Upload,
   Mail,
-  Eye,
-  EyeOff,
   Trash2,
 } from "lucide-react";
 import {
   updateUsername,
   updateAvatarFile,
-  changePassword,
   deleteAccount,
 } from "../../service/auth";
+import ChangePasswordSection from "../../component/ChangePasswordSection";
 
 async function compressImageFile(file, maxWidth = 800, quality = 0.8) {
   const image = await new Promise((resolve, reject) => {
@@ -51,25 +49,12 @@ const AdminAccount = () => {
   const [savingUsername, setSavingUsername] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setUsername(user?.username || "");
     setAvatar(user?.avatar || null);
   }, [user]);
-
-  const passwordStrength = () => {
-    if (!newPassword) return 0;
-    if (newPassword.length < 6) return 25;
-    if (newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /\d/.test(newPassword)) return 100;
-    return 60;
-  };
 
   const avatarSrc =
     avatar ||
@@ -117,30 +102,6 @@ const AdminAccount = () => {
     } finally {
       setUploadingAvatar(false);
       e.target.value = "";
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (newPassword.length < 6) {
-      showToast("Password must be at least 6 characters", "warning");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showToast("Passwords do not match", "error");
-      return;
-    }
-    setSavingPassword(true);
-    try {
-      await changePassword(currentPassword, newPassword);
-      showToast("Password updated", "success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      showToast(err.message, "error");
-    } finally {
-      setSavingPassword(false);
     }
   };
 
@@ -258,74 +219,7 @@ const AdminAccount = () => {
 
       {section === "security" && (
         <div className="space-y-6 max-w-lg">
-          <form
-            onSubmit={handlePasswordChange}
-            className="space-y-4 p-5 rounded-xl border border-white/10 bg-black/20"
-          >
-            <h3 className="font-medium">Change password</h3>
-            <div>
-              <label className="text-sm text-gray-300 block mb-1">Current password</label>
-              <div className="relative">
-                <input
-                  type={showCurrentPw ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-2.5 text-gray-400"
-                  onClick={() => setShowCurrentPw(!showCurrentPw)}
-                >
-                  {showCurrentPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-gray-300 block mb-1">New password</label>
-              <div className="relative">
-                <input
-                  type={showNewPw ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-2.5 text-gray-400"
-                  onClick={() => setShowNewPw(!showNewPw)}
-                >
-                  {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-              <div className="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-amber-400 transition-all"
-                  style={{ width: `${passwordStrength()}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-gray-300 block mb-1">Confirm password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={savingPassword}
-              className="w-full py-2.5 rounded-lg bg-[#01B4E4] text-black font-semibold disabled:opacity-50"
-            >
-              {savingPassword ? "Updating..." : "Update password"}
-            </button>
-          </form>
+          <ChangePasswordSection email={user?.email} strengthVariant="amber" />
 
           <div className="p-5 rounded-xl border border-red-500/20 bg-red-500/5">
             <h3 className="font-medium text-red-300 flex items-center gap-2">

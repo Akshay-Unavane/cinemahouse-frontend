@@ -3,8 +3,6 @@ import { useToast } from "../context/useToast";
 import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Eye,
-  EyeOff,
   LogOut,
   Trash2,
   Upload,
@@ -20,12 +18,8 @@ import {
   Bell,
 } from "lucide-react";
 import { getWatchlist } from "../service/watchlist";
-import {
-  updateUsername,
-  deleteAccount,
-  updateAvatarFile,
-  changePassword,
-} from "../service/auth";
+import { updateUsername, deleteAccount, updateAvatarFile } from "../service/auth";
+import ChangePasswordSection from "../component/ChangePasswordSection";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
@@ -82,7 +76,10 @@ const allTabs = [
   { key: "settings", label: "Settings", icon: Settings },
 ];
 
-const adminTabs = [{ key: "activity", label: "Activity", icon: Clock }];
+const adminTabs = [
+  { key: "activity", label: "Activity", icon: Clock },
+  { key: "security", label: "Security", icon: Shield },
+];
 
 const Profile = () => {
   const { user, logout, updateUser, loading: authLoading } = useAuth();
@@ -96,11 +93,6 @@ const Profile = () => {
   const [avatar, setAvatar] = useState(null);
   const [watchlistStats, setWatchlistStats] = useState([]);
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
 
   const [prefs, setPrefs] = useState(loadPrefs);
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -108,7 +100,6 @@ const Profile = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [savingUsername, setSavingUsername] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
@@ -119,13 +110,6 @@ const Profile = () => {
 
   const movieCount = watchlistStats.filter((i) => i.mediaType === "movie").length;
   const tvCount = watchlistStats.filter((i) => i.mediaType === "tv").length;
-
-  const passwordStrength = () => {
-    if (!newPassword) return 0;
-    if (newPassword.length < 6) return 25;
-    if (newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /\d/.test(newPassword)) return 100;
-    return 60;
-  };
 
   const syncUserFields = useCallback(() => {
     if (!user) return;
@@ -223,30 +207,6 @@ const Profile = () => {
       showToast(err.message, "error");
     } finally {
       setSavingUsername(false);
-    }
-  };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (newPassword.length < 6) {
-      showToast("New password must be at least 6 characters", "warning");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showToast("Passwords do not match", "error");
-      return;
-    }
-    setSavingPassword(true);
-    try {
-      const res = await changePassword(currentPassword, newPassword);
-      showToast(res.message || "Password updated", "success");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      showToast(err.message, "error");
-    } finally {
-      setSavingPassword(false);
     }
   };
 
@@ -482,11 +442,11 @@ const Profile = () => {
         <main className="flex-1 p-5 md:p-8 overflow-y-auto">
           {isAdmin && (
             <p className="text-sm text-gray-400 mb-6 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
-              Personal details and security are managed in{" "}
+              Username and account details are in{" "}
               <Link to="/admin/account" className="text-amber-300 hover:underline">
                 Admin Dashboard → My account
               </Link>
-              .
+              . You can change your password here under Security.
             </p>
           )}
 
@@ -543,80 +503,15 @@ const Profile = () => {
             </div>
           )}
 
-          {!isAdmin && activeTab === "security" && (
+          {activeTab === "security" && (
             <div className="max-w-md space-y-6">
               <div>
                 <h2 className="text-2xl font-bold">Security</h2>
-                <p className="text-gray-400 text-sm mt-1">Update your password securely</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Update your password with your current password or a code sent to your email.
+                </p>
               </div>
-              <form onSubmit={handlePasswordChange} className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-5">
-                <div>
-                  <label className="text-sm text-gray-300 block mb-1">Current password</label>
-                  <div className="relative">
-                    <input
-                      type={showCurrentPw ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
-                      required
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-2.5 text-gray-400"
-                      onClick={() => setShowCurrentPw(!showCurrentPw)}
-                    >
-                      {showCurrentPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-300 block mb-1">New password</label>
-                  <div className="relative">
-                    <input
-                      type={showNewPw ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5 pr-10"
-                      required
-                      minLength={6}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-3 top-2.5 text-gray-400"
-                      onClick={() => setShowNewPw(!showNewPw)}
-                    >
-                      {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  <div className="h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                    <div
-                      className="h-full bg-[#01B4E4] transition-all"
-                      style={{ width: `${passwordStrength()}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">Use 8+ chars with a number and capital letter for a strong password.</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-300 block mb-1">Confirm new password</label>
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-black/40 border border-white/15 rounded-lg px-3 py-2.5"
-                    required
-                    autoComplete="new-password"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={savingPassword}
-                  className="w-full py-2.5 rounded-lg bg-[#01B4E4] text-black font-semibold disabled:opacity-50"
-                >
-                  {savingPassword ? "Updating..." : "Update password"}
-                </button>
-              </form>
+              <ChangePasswordSection email={user?.email} />
             </div>
           )}
 
