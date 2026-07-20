@@ -157,7 +157,7 @@ function TVShows() {
       </h1>
 
       {/* SEARCH & FILTER BAR */}
-      <div className="sticky top-14 sm:top-16 z-40 bg-black/80 backdrop-blur-md py-4 sm:py-5 mb-6 sm:mb-8">
+      <div className=" top-14 sm:top-16 z-40 bg-black/80 backdrop-blur-md py-4 sm:py-5 mb-6 sm:mb-8">
         <div ref={searchRef} className="relative max-w-xl mx-auto">
           <Search className="absolute left-4 top-3.5 text-gray-400" size={18} />
           <input
