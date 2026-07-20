@@ -154,7 +154,7 @@ function Movies() {
 
       {/* TITLE */}
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white text-center mt-4 sm:mt-8 mb-6 sm:mb-8">
-        Movies 🎬
+        Movies
       </h1>
 
       {/* SEARCH & FILTER BAR */}
