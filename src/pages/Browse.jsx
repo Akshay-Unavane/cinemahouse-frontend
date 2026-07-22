@@ -77,7 +77,7 @@ const Browse = () => {
       </button>
 
       {/* TITLE */}
-      <h1 className="text-xl sm:text-2xl font-bold mb-8">
+      <h1 className="text-xl sm:text-2xl font-bold mb-8 ml-28 sm:ml-29">
         Search results for{" "}
         <span className="text-[#01B4E4]">“{query}”</span>
       </h1>
