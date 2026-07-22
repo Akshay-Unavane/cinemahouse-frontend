@@ -294,7 +294,7 @@ const Navbar = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-white/10 bg-[#0D253F] overflow-hidden"
+              className="border-t border-white/10  overflow-hidden"
             >
               <form onSubmit={handleSearch} className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
                 <div className="relative">
