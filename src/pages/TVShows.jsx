@@ -131,7 +131,9 @@ function TVShows() {
       <Loader visible={loading} message="Loading TV Shows..." />
 
       {/* ✅ SAFE BACK BUTTON (NO OVERLAP EVER) */}
-      <div className="top-14 sm:top-16 z-10 w-fit">
+
+      <div className=" top-14 sm:top-16 z-10 w-fit">
+
         <button
           onClick={() => navigate(-1)}
           className="

@@ -33,6 +33,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
 import ResetPassword from "./pages/ResetPassword";
+import VerifyOTP from "./pages/VerifyOTP";
 
 import Profile from "./pages/Profile";
 
@@ -111,6 +112,7 @@ function App() {
               <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
 
               <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
+              <Route path="/verify-otp" element={<GuestRoute><VerifyOTP /></GuestRoute>} />
 
 
 

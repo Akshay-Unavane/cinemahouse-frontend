@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Eye, EyeOff, Clapperboard } from "lucide-react";
 import { motion as Motion } from "framer-motion";
 import { useToast } from "../context/useToast";
 import { register as registerApi } from "../service/auth";
+import EmailValidator from "../components/EmailValidator";
+import PasswordStrength from "../components/PasswordStrength";
+import useDebounce from "../hooks/useDebounce";
+import { checkEmail as checkEmailApi } from "../services/authService";
 import { useAuth } from "../context/useAuth";
 
 const Register = () => {
@@ -20,6 +24,29 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState(null);
+
+  const debouncedEmail = useDebounce(form.email, 500);
+
+  useEffect(() => {
+    let mounted = true;
+    async function check() {
+      const email = debouncedEmail?.trim();
+      if (!email) {
+        setEmailAvailable(null);
+        return;
+      }
+      try {
+        const res = await checkEmailApi(email);
+        if (!mounted) return;
+        setEmailAvailable(!res.exists);
+      } catch (err) {
+        setEmailAvailable(null);
+      }
+    }
+    check();
+    return () => (mounted = false);
+  }, [debouncedEmail]);
 
   /* PASSWORD STRENGTH */
   const getPasswordStrength = (password) => {
@@ -65,25 +92,19 @@ const Register = () => {
       return;
     }
 
+    if (emailAvailable === false) {
+      showToast("Email already registered", "warning");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await registerApi(username, email, password);
-
-      // Auto-login after successful registration
-      if (res?.token) {
-        login(res.token);
-        showToast("Account created and logged in", "success");
-        navigate("/", { replace: true });
-      } else {
-        showToast("Account created successfully", "success");
-        setTimeout(() => navigate("/login"), 1200);
-      }
-      setForm({ username: "", email: "", password: "", confirmPassword: "" });
+      const data = await registerApi(username, email, password);
+      showToast(data.message || "Account created. Check your email.", "success");
+      // Navigate to verify page with email in query
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      showToast(
-        err.response?.data?.message || err.message || "Registration failed",
-        "error"
-      );
+      showToast(err.response?.data?.message || err.message || "Registration failed", "error");
     } finally {
       setLoading(false);
     }
@@ -132,6 +153,9 @@ const Register = () => {
             onChange={handleChange}
             placeholder="you@example.com"
           />
+          <EmailValidator value={form.email} />
+          {emailAvailable === true && <div className="text-emerald-400 text-sm mt-1">✔ Email Available</div>}
+          {emailAvailable === false && <div className="text-rose-400 text-sm mt-1">❌ Email Already Registered</div>}
 
           {/* PASSWORD */}
           <div>
@@ -181,6 +205,7 @@ const Register = () => {
               </p>
             </div>
           </div>
+          <PasswordStrength password={form.password} />
 
           <Input
             label="Confirm password"
